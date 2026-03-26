@@ -1273,7 +1273,7 @@ select {
           <div class="legend-item">
             <div class="legend-icon" style="color:var(--stage-close)">●</div>
             <div class="legend-text">
-              <div class="legend-term" style="color:var(--stage-close)">Close the Deal ⚡</div>
+              <div class="legend-term" style="color:var(--stage-close)">Seal the Deal ⚡</div>
               <div class="legend-def">Party date is imminent — within days. Client is warm or has expressed intent to pay. Needs immediate follow-up to convert.</div>
             </div>
           </div>
@@ -1431,7 +1431,7 @@ select {
   <div class="filters">
     <button class="filt active" data-f="all" onclick="applyFilter(this)">All</button>
     <button class="filt" data-f="working" onclick="applyFilter(this)">Working</button>
-    <button class="filt" data-f="close" onclick="applyFilter(this)">Close the Deal</button>
+    <button class="filt" data-f="close" onclick="applyFilter(this)">Seal the Deal</button>
     <button class="filt" data-f="booked" onclick="applyFilter(this)">Booked</button>
     <button class="filt" data-f="lost" onclick="applyFilter(this)">Did Not Book</button>
     <button class="filt" data-f="atrisk" onclick="applyFilter(this)" style="color:var(--red);border-color:rgba(224,82,82,0.3);">⚠ At Risk</button>
@@ -1511,7 +1511,7 @@ select {
     <div class="fsec-label">Inquiry Stage</div>
     <div class="tag-group" id="stageGroup">
       <button class="tag-btn sel" data-stage="working" onclick="toggleTag(this,'stage')">Working</button>
-      <button class="tag-btn" data-stage="close" onclick="toggleTag(this,'stage')">Close the Deal</button>
+      <button class="tag-btn" data-stage="close" onclick="toggleTag(this,'stage')">Seal the Deal</button>
       <button class="tag-btn" data-stage="booked" onclick="toggleTag(this,'stage')">Booked</button>
       <button class="tag-btn" data-stage="lost" onclick="toggleTag(this,'stage')">Did Not Book</button>
     </div>
@@ -1588,7 +1588,7 @@ select {
       <div class="export-options">
         <div class="export-opt" onclick="runExport('pipeline')">
           <div class="export-opt-title">↓ Pipeline</div>
-          <div class="export-opt-desc">All active inquiries — working, close the deal, booked, and did not book</div>
+          <div class="export-opt-desc">All active inquiries — working, seal the deal, booked, and did not book</div>
         </div>
         <div class="export-opt" onclick="runExport('archive')">
           <div class="export-opt-title">↓ Archive</div>
@@ -1757,7 +1757,7 @@ function isAtRisk(inq) {
 }
 
 function stageLabel(s) {
-  return { working:'Working', close:'Close the Deal', booked:'Booked ✓', lost:'Did Not Book' }[s] || s;
+  return { working:'Working', close:'Seal the Deal', booked:'Booked ✓', lost:'Did Not Book' }[s] || s;
 }
 
 function stageColor(s) {
@@ -1795,7 +1795,7 @@ function renderStats() {
   document.getElementById('statsRow').innerHTML = `
     <div class="stat" onclick="setStatFilter('all')"><div class="stat-num">${total}</div><div class="stat-label">Active Inquiries</div></div>
     <div class="stat" onclick="setStatFilter('working')"><div class="stat-num gold">${working}</div><div class="stat-label">Working</div></div>
-    <div class="stat" onclick="setStatFilter('close')"><div class="stat-num" style="color:var(--red)">${close}</div><div class="stat-label">Close the Deal</div></div>
+    <div class="stat" onclick="setStatFilter('close')"><div class="stat-num" style="color:var(--red)">${close}</div><div class="stat-label">Seal the Deal</div></div>
     <div class="stat" onclick="setStatFilter('booked')"><div class="stat-num green">${booked}</div><div class="stat-label">Confirmed</div></div>
     <div class="stat" onclick="setStatFilter('atrisk')"><div class="stat-num" style="color:var(--red);font-size:28px">${atRisk}</div><div class="stat-label">⚠ At Risk</div></div>
     <div class="stat" style="cursor:default"><div class="stat-num" style="color:var(--gold);font-size:28px">${totalEver}</div><div class="stat-label">All-Time Parties</div></div>
@@ -1816,7 +1816,7 @@ function setStatFilter(f) {
 function renderPipeline() {
   const search = (document.getElementById('searchBox')?.value||'').toLowerCase();
   const stages = ['working','close','booked','lost'];
-  const stageTitles = { working:'Working', close:'Close the Deal ⚡', booked:'Booked', lost:'Did Not Book' };
+  const stageTitles = { working:'Working', close:'Seal the Deal ⚡', booked:'Booked', lost:'Did Not Book' };
   const stageCls    = { working:'working', close:'close', booked:'booked', lost:'lost' };
 
   let filtered = inquiries.filter(i => {
@@ -1834,7 +1834,16 @@ function renderPipeline() {
   pipeline.style.gridTemplateColumns = activeStagesToShow.length === 1 ? '1fr' : `repeat(${activeStagesToShow.length}, 1fr)`;
 
   pipeline.innerHTML = activeStagesToShow.map(stage => {
-    const cards = filtered.filter(i => i.stage === stage);
+    const cards = filtered
+      .filter(i => i.stage === stage)
+      .sort((a, b) => {
+        // TBD dates go to bottom
+        if (a.date === 'TBD' && b.date === 'TBD') return 0;
+        if (a.date === 'TBD') return 1;
+        if (b.date === 'TBD') return -1;
+        // Sort ascending by date — soonest first
+        return new Date(a.date) - new Date(b.date);
+      });
     const cardsHTML = cards.length === 0
       ? `<div style="padding:20px 0;text-align:center;color:var(--text-muted);font-size:11px;font-style:italic;">No inquiries</div>`
       : cards.map(inq => cardHTML(inq)).join('');
