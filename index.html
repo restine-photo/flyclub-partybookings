@@ -1,0 +1,2359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fly Club — Bookings OS</title>
+<link href="https://fonts.googleapis.com/css2?family=Poiret+One&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #000000;
+  --surface: #0a0a0a;
+  --card: #111111;
+  --border: rgba(255,255,255,0.07);
+  --border-bright: rgba(255,255,255,0.14);
+  --text: #f0ebe0;
+  --text-dim: rgba(240,235,224,0.45);
+  --text-muted: rgba(240,235,224,0.25);
+  --gold: #c8278a;
+  --gold-dim: rgba(200,39,138,0.15);
+  --gold-glow: rgba(200,39,138,0.08);
+  --green: #4caf7d;
+  --green-dim: rgba(76,175,125,0.15);
+  --red: #e05252;
+  --red-dim: rgba(224,82,82,0.13);
+  --blue: #6ba3d6;
+  --blue-dim: rgba(107,163,214,0.15);
+  --purple: #a87dd4;
+  --purple-dim: rgba(168,125,212,0.15);
+  --stage-working: #c8278a;
+  --stage-close: #e05252;
+  --stage-booked: #4caf7d;
+  --stage-lost: rgba(240,235,224,0.3);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: rgba(200,39,138,0.3); border-radius: 2px; }
+
+/* ── HEADER ── */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 32px;
+  border-bottom: 1px solid var(--border);
+  background: #000;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+}
+
+.logo {
+  font-family: 'Poiret One', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--gold);
+}
+
+.logo span { color: var(--text); font-weight: 400; font-style: italic; }
+
+.header-tabs { display: flex; gap: 2px; }
+
+.htab {
+  padding: 7px 20px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-dim);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.htab.active {
+  background: var(--gold-dim);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.htab:hover:not(.active) { color: var(--text); border-color: var(--border-bright); }
+
+.header-meta {
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-align: right;
+  line-height: 1.6;
+}
+
+/* ── VIEWS ── */
+.view { display: none; animation: fadeUp 0.3s ease; }
+.view.active { display: block; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── DASHBOARD ── */
+.dash { padding: 28px 32px; }
+
+.dash-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  gap: 24px;
+}
+
+.dash-title h1 {
+  font-family: 'Poiret One', sans-serif;
+  font-size: 32px;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.dash-title h1 em { font-style: italic; color: var(--gold); }
+
+.dash-title p {
+  margin-top: 6px;
+  color: var(--text-dim);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+/* STAT CARDS */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin-bottom: 28px;
+}
+
+.stat {
+  background: var(--card);
+  padding: 20px 22px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.stat:hover { background: #1e1a12; }
+.stat.active-filter { background: var(--gold-dim); outline: 1px solid var(--gold); }
+
+.stat-num {
+  font-family: 'Poiret One', sans-serif;
+  font-size: 40px;
+  font-weight: 400;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.stat-num.gold { color: var(--gold); }
+.stat-num.red  { color: var(--red); }
+.stat-num.green { color: var(--green); }
+.stat-num.blue { color: var(--blue); }
+
+.stat-label {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* PIPELINE COLUMNS */
+.pipeline {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.col-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid;
+}
+
+.col-header.working { border-color: var(--stage-working); }
+.col-header.close   { border-color: var(--stage-close); }
+.col-header.booked  { border-color: var(--stage-booked); }
+.col-header.lost    { border-color: rgba(240,235,224,0.2); }
+
+.col-title {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.col-title.working { color: var(--stage-working); }
+.col-title.close   { color: var(--stage-close); }
+.col-title.booked  { color: var(--stage-booked); }
+.col-title.lost    { color: var(--text-dim); }
+
+.col-count {
+  font-size: 10px;
+  color: var(--text-muted);
+  background: var(--border);
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+/* INQUIRY CARD */
+.inq-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 14px 16px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.inq-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+}
+
+.inq-card.working::before { background: var(--stage-working); }
+.inq-card.close::before   { background: var(--stage-close); }
+.inq-card.booked::before  { background: var(--stage-booked); }
+.inq-card.lost::before    { background: rgba(240,235,224,0.15); }
+
+.inq-card:hover { background: #1e1a12; border-color: var(--border-bright); transform: translateY(-1px); }
+
+.inq-card.at-risk { background: rgba(224,82,82,0.06); border-color: rgba(224,82,82,0.2); }
+
+.card-name {
+  letter-spacing: 0.04em;
+  font-family: 'Poiret One', sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.card-name .risk-pulse {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--red);
+  flex-shrink: 0;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+.card-date {
+  font-size: 11px;
+  color: var(--gold);
+  margin-bottom: 5px;
+  letter-spacing: 0.04em;
+}
+
+.card-meta {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.card-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.flag {
+  font-size: 9px;
+  padding: 2px 7px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 2px;
+}
+
+.flag-swag    { background: var(--purple-dim); color: var(--purple); border: 1px solid rgba(168,125,212,0.2); }
+.flag-offsite { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(107,163,214,0.2); }
+.flag-bigmoney{ background: var(--gold-dim); color: var(--gold); border: 1px solid rgba(200,39,138,0.2); }
+.flag-mo      { background: rgba(240,235,224,0.06); color: var(--text-dim); border: 1px solid var(--border); }
+.flag-theme   { background: rgba(76,175,125,0.1); color: var(--green); border: 1px solid rgba(76,175,125,0.2); }
+.flag-risk    { background: var(--red-dim); color: var(--red); border: 1px solid rgba(224,82,82,0.2); }
+
+.card-comms {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.comm-dot {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 500;
+}
+
+.comm-email  { background: var(--blue-dim); color: var(--blue); }
+.comm-call   { background: var(--green-dim); color: var(--green); }
+.comm-text   { background: var(--gold-dim); color: var(--gold); }
+.comm-follow { background: var(--purple-dim); color: var(--purple); }
+
+.card-received {
+  font-size: 9px;
+  color: var(--text-muted);
+  margin-top: 8px;
+  letter-spacing: 0.06em;
+}
+
+/* ── DETAIL PANEL ── */
+.panel-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 300;
+  backdrop-filter: blur(4px);
+}
+
+.panel-overlay.open { display: block; }
+
+.side-panel {
+  position: fixed;
+  right: 0; top: 0; bottom: 0;
+  width: 420px;
+  background: var(--surface);
+  border-left: 1px solid var(--border-bright);
+  z-index: 400;
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+.side-panel.open { transform: translateX(0); }
+
+.panel-head {
+  padding: 24px 28px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.panel-name {
+  font-family: 'Poiret One', sans-serif;
+  font-size: 26px;
+  font-style: italic;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+.panel-close {
+  background: transparent;
+  border: 1px solid var(--border-bright);
+  color: var(--text-dim);
+  width: 32px; height: 32px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.panel-close:hover { background: var(--red-dim); border-color: var(--red); color: var(--red); }
+
+.panel-body { padding: 24px 28px; }
+
+.panel-section { margin-bottom: 24px; }
+
+.panel-section-label {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.panel-section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  gap: 16px;
+}
+
+.detail-key { color: var(--text-muted); font-size: 10px; letter-spacing: 0.08em; flex-shrink: 0; }
+.detail-val { color: var(--text); font-size: 11px; text-align: right; }
+.detail-val.gold { color: var(--gold); }
+
+.comms-log { display: flex; flex-direction: column; gap: 6px; }
+
+.comm-entry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+}
+
+.comm-icon { font-size: 14px; width: 24px; text-align: center; }
+.comm-label { font-size: 10px; color: var(--text-dim); letter-spacing: 0.06em; }
+
+.notes-box {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  padding: 12px;
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  font-style: italic;
+}
+
+/* STAGE CHANGER */
+.stage-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+.stage-btn {
+  padding: 9px 12px;
+  background: transparent;
+  border: 1px solid var(--border-bright);
+  color: var(--text-dim);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.stage-btn:hover { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+.stage-btn.current { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+
+/* ── ENTRY FORM ── */
+.entry-wrap {
+  max-width: 700px;
+  margin: 52px auto;
+  padding: 0 32px;
+}
+
+.entry-head {
+  margin-bottom: 48px;
+}
+
+.entry-head h1 {
+  font-family: 'Poiret One', sans-serif;
+  font-size: 40px;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.entry-head h1 em { font-style: italic; color: var(--gold); }
+
+.entry-head p { margin-top: 10px; color: var(--text-dim); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; }
+
+.fsec { margin-bottom: 40px; }
+
+.fsec-label {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fsec-label::after { content:''; flex:1; height:1px; background: var(--border); }
+
+.frow { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.frow.single { grid-template-columns: 1fr; }
+.frow.triple { grid-template-columns: 1fr 1fr 1fr; }
+
+.fld { display: flex; flex-direction: column; gap: 7px; }
+
+label {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+input, select, textarea {
+  background: var(--card);
+  border: 1px solid var(--border-bright);
+  padding: 11px 13px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+  -webkit-appearance: none;
+  border-radius: 0;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--gold);
+  background: #1a1710;
+}
+
+input::placeholder, textarea::placeholder { color: var(--text-muted); }
+
+textarea { resize: vertical; min-height: 72px; }
+
+select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23d4a843' opacity='.6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 13px center;
+  background-color: var(--card);
+  padding-right: 34px;
+}
+
+.tag-group { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.tag-btn {
+  padding: 7px 14px;
+  border: 1px solid var(--border-bright);
+  background: transparent;
+  color: var(--text-dim);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tag-btn:hover { background: var(--gold-glow); border-color: var(--gold); color: var(--gold); }
+.tag-btn.sel { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+
+.comm-toggles { display: flex; flex-wrap: wrap; gap: 6px; }
+.comm-toggle { padding: 7px 12px; border: 1px solid var(--border-bright); background: transparent; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; font-size: 10px; cursor: pointer; transition: all 0.15s; }
+.comm-toggle:hover { background: var(--gold-glow); border-color: var(--gold); color: var(--gold); }
+.comm-toggle.sel { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+
+.flag-toggles { display: flex; flex-wrap: wrap; gap: 6px; }
+.flag-toggle { padding: 7px 14px; border: 1px solid var(--border-bright); background: transparent; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.06em; cursor: pointer; transition: all 0.15s; }
+.flag-toggle:hover { background: var(--gold-glow); border-color: var(--gold); color: var(--gold); }
+.flag-toggle.sel { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 44px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+
+.btn-save {
+  padding: 13px 36px;
+  background: var(--gold);
+  color: var(--bg);
+  border: none;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.btn-save:hover { background: #d94aaa; }
+
+.btn-clear {
+  padding: 13px 24px;
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border-bright);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-clear:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+
+.save-flash {
+  display: none;
+  margin-top: 16px;
+  padding: 12px 18px;
+  background: var(--green-dim);
+  border: 1px solid rgba(76,175,125,0.3);
+  color: var(--green);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Filters bar */
+.filters {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.filt {
+  padding: 5px 14px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.filt.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+.filt:hover:not(.active) { background: rgba(255,255,255,0.04); border-color: var(--border-bright); color: var(--text); }
+
+.search-bar {
+  margin-left: auto;
+  position: relative;
+}
+
+.search-bar input {
+  padding: 5px 12px 5px 30px;
+  width: 200px;
+  font-size: 11px;
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+
+.search-bar::before {
+  content: '⌕';
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+@media (max-width: 900px) {
+  .pipeline { grid-template-columns: 1fr 1fr; }
+  .stats { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 600px) {
+  header { padding: 14px 16px; }
+  .dash { padding: 16px; }
+  .pipeline { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: 1fr 1fr; }
+  .side-panel { width: 100%; }
+  .entry-wrap { padding: 0 16px; }
+}
+
+/* ── ARCHIVE ── */
+.archive-wrap { padding: 28px 32px; }
+
+.archive-head {
+  margin-bottom: 28px;
+}
+
+.archive-head h1 {
+  font-family: 'Poiret One', sans-serif;
+  font-size: 32px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+}
+
+.archive-head p { margin-top: 6px; color: var(--text-dim); font-size: 11px; letter-spacing: 0.06em; }
+
+.month-group { margin-bottom: 32px; }
+
+.month-label {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.month-count {
+  font-size: 9px;
+  color: var(--text-muted);
+  background: rgba(200,39,138,0.1);
+  padding: 2px 8px;
+  border: 1px solid rgba(200,39,138,0.2);
+  letter-spacing: 0.08em;
+}
+
+.archive-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 8px;
+}
+
+.archive-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 12px 16px;
+  transition: all 0.15s;
+}
+
+.archive-card:hover { background: #1a1a1a; border-color: var(--border-bright); }
+
+.archive-name {
+  font-family: 'Poiret One', sans-serif;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  margin-bottom: 5px;
+  color: var(--text);
+}
+
+.archive-detail {
+  font-size: 10px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.archive-detail .adate { color: var(--gold); font-size: 11px; margin-bottom: 3px; }
+
+.archive-flags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
+
+.archive-search {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.archive-search input {
+  width: 260px;
+  padding: 8px 14px;
+  background: var(--card);
+  border: 1px solid var(--border-bright);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--text);
+  outline: none;
+}
+
+.archive-search input:focus { border-color: var(--gold); }
+
+.archive-stats {
+  display: flex;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin-bottom: 28px;
+}
+
+.astat {
+  background: var(--card);
+  padding: 16px 20px;
+  flex: 1;
+}
+
+.astat-num {
+  font-family: 'Poiret One', sans-serif;
+  font-size: 32px;
+  color: var(--gold);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.astat-label { font-size: 9px; color: var(--text-muted); letter-spacing: 0.12em; text-transform: uppercase; }
+
+
+/* ── ARCHIVE BANNER ── */
+.archive-banner {
+  margin: 0 28px 20px;
+  padding: 14px 18px;
+  background: rgba(200,39,138,0.08);
+  border: 1px solid rgba(200,39,138,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  animation: fadeUp 0.3s ease;
+}
+
+.archive-banner-text {
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.archive-banner-text strong {
+  display: block;
+  color: var(--gold);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+  font-weight: 500;
+}
+
+.archive-banner-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.btn-archive-confirm {
+  padding: 8px 16px;
+  background: var(--gold);
+  color: #000;
+  border: none;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.btn-archive-confirm:hover { background: #d94aaa; }
+
+.btn-archive-dismiss {
+  padding: 8px 12px;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border-bright);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-archive-dismiss:hover { color: var(--text); border-color: var(--text-dim); }
+
+.archive-done-flash {
+  margin: 0 28px 20px;
+  padding: 12px 18px;
+  background: rgba(76,175,125,0.1);
+  border: 1px solid rgba(76,175,125,0.3);
+  color: var(--green);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  animation: fadeUp 0.3s ease;
+}
+
+
+/* ── EXPORT BUTTON ── */
+.btn-export {
+  padding: 7px 18px;
+  background: transparent;
+  border: 1px solid rgba(200,39,138,0.4);
+  color: var(--gold);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-export:hover {
+  background: var(--gold-dim);
+  border-color: var(--gold);
+}
+
+/* EXPORT MODAL */
+.export-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  z-index: 500;
+  backdrop-filter: blur(6px);
+  align-items: center;
+  justify-content: center;
+}
+
+.export-overlay.open { display: flex; }
+
+.export-modal {
+  background: var(--surface);
+  border: 1px solid var(--border-bright);
+  width: 520px;
+  max-width: 95vw;
+  animation: fadeUp 0.25s ease;
+}
+
+.export-modal-head {
+  padding: 22px 28px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.export-modal-head h2 {
+  font-family: 'Poiret One', sans-serif;
+  font-size: 22px;
+  letter-spacing: 0.05em;
+  font-weight: 400;
+}
+
+.export-modal-body {
+  padding: 24px 28px;
+}
+
+.export-modal-body p {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 20px;
+  line-height: 1.6;
+  letter-spacing: 0.03em;
+}
+
+.export-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.export-opt {
+  padding: 14px 16px;
+  background: var(--card);
+  border: 1px solid var(--border-bright);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+
+.export-opt:hover { background: #1e1e1e; border-color: var(--gold); }
+
+.export-opt-title {
+  font-size: 11px;
+  color: var(--gold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.export-opt-desc {
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+  line-height: 1.4;
+}
+
+.export-modal-foot {
+  padding: 16px 28px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+}
+
+
+/* ── PIPELINE LEGEND ── */
+.legend-bar {
+  margin-bottom: 24px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  overflow: hidden;
+}
+
+.legend-toggle {
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 11px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  color: var(--text-dim);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: background 0.15s;
+}
+
+.legend-toggle:hover { background: rgba(255,255,255,0.03); }
+
+.legend-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.legend-toggle-label::before {
+  content: '◈';
+  color: var(--gold);
+  font-size: 11px;
+}
+
+.legend-chevron {
+  font-size: 10px;
+  transition: transform 0.2s;
+  color: var(--text-muted);
+}
+
+.legend-chevron.open { transform: rotate(180deg); }
+
+.legend-body {
+  display: none;
+  padding: 0 18px 18px;
+  border-top: 1px solid var(--border);
+}
+
+.legend-body.open { display: block; }
+
+.legend-sections {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0 32px;
+  margin-top: 16px;
+}
+
+.legend-section-title {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 10px;
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legend-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(200,39,138,0.2);
+}
+
+.legend-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+.legend-item:last-child { border-bottom: none; }
+
+.legend-icon {
+  font-size: 13px;
+  width: 22px;
+  flex-shrink: 0;
+  text-align: center;
+  margin-top: 1px;
+}
+
+.legend-text {}
+
+.legend-term {
+  font-size: 10px;
+  color: var(--text);
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+}
+
+.legend-def {
+  font-size: 10px;
+  color: var(--text-muted);
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+}
+
+.legend-stage-pill {
+  display: inline-block;
+  font-size: 9px;
+  padding: 1px 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+
+/* ── DUPLICATE WARNING ── */
+.dup-warning {
+  display: none;
+  margin-top: 14px;
+  padding: 14px 18px;
+  background: rgba(224,82,82,0.08);
+  border: 1px solid rgba(224,82,82,0.35);
+  animation: fadeUp 0.25s ease;
+}
+
+.dup-warning-head {
+  font-size: 10px;
+  color: var(--red);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.dup-warning-matches {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.dup-match {
+  font-size: 11px;
+  color: var(--text-dim);
+  padding: 6px 10px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  line-height: 1.5;
+}
+
+.dup-match strong { color: var(--text); }
+
+.dup-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-dup-save {
+  padding: 8px 20px;
+  background: var(--red);
+  color: #fff;
+  border: none;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-dup-save:hover { background: #c0392b; }
+
+.btn-dup-cancel {
+  padding: 8px 16px;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border-bright);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-dup-cancel:hover { color: var(--text); border-color: var(--text-dim); }
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><img src="data:image/png;base64,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WMeb96O59Hcy58cYqt1BZ54KarinrJmFjGRuDtXPYXHLdkqYRFqubmVxLNnJi2LVcSqqc1klsQREXMRQREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQEu0bYmjslc+lrHltFUEEu38G/43e5VbXrnb/Uvqr1bTcBlnwnCDVy7613RSFtiE6MNDLNFlwvlLWsKPMuOkls15ZfsTvSFjT1ya62Wp7hSbpZdxl5h+T6VDbXVOorlTVjPdQStkHgOa6yLlq151Z6cnrIi8xCvd1+fqPX0dncbIQSNlhZKw5te0OaeUFfaiujG6tuOGYoXOzmpPaXjPbkPcnxehSpWmlUVSCkuk+v2dzG6oQrR2SWYO5UfpEu4u+JZnRv1oIPaYstxA3nwnPzKydIt+Fmsb2RPyq6kGOIA7Wjjd4PTkqTUTilfZSXzKbywxFPRtIPtf2X34F5aOqgVODre7jYwxn/CSFIVX+hiu17bWW9x7aKQSNGfE4ZHzjzqwFJWk9OjF9haMFrqvYUp9iXDV9gobpg96jf0lnoKmShumD3qN/SWegry8/Il3HmN/wC31v7WU8iIqqfHS89HXvNt35s/vFSBR/R17zbd+bP7xUgVuoflR7kfasO/0dL+2P0QUL0wVAiwu2HPtpqhoA5gCfsU0VWaZ64SXKjt7XfcYzI8c7js8w860X89ChLt1HByirqjh1R79XH9jqaJLuKK9vt8rsoqwZNz4njd4xmPEreWt8EskMzJonFsjHBzXDiI3FXzhG8xXyyw1jCBJlqzNH4rxv6VyYXXzi6T6NhDckMRU6TtJvXHWu7p4P6mXXRv9a232asrXHLgYXOHfy2DxrvKB6YbqILVFao3e2VLtd45GN6T6FI3NVUqTkWbE7tWlpUrPoWrv6PEqkklxcTtJzVk4AxxG2FlsvU2oWjVhqHHYRyOP2qtUVYoXE6EtKJ8mw7Eq2H1edpPvXQzYequtupaU1M9bTshAz1jIMj3uVUvjq/m/wB4M0es2lhGpA08nG4856FgEXRdX868dHLJEni3KKtiNNUtHRj0688wiIuEroREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAZjCd+qMP3QVcI14nDVmizyD29PIrHm0j2FtHwsTam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" alt="Fly Club" style="height:38px;display:block;"></div>
+  <div class="header-tabs">
+    <button class="htab active" onclick="showView('dashboard',this)">Pipeline</button>
+    <button class="htab" onclick="showView('entry',this)">+ New Inquiry</button>
+    <button class="htab" onclick="showView('archive',this)">Archive</button>
+  </div>
+  <div class="header-meta" style="display:flex;align-items:center;gap:16px;">
+    <button class="btn-export" onclick="exportData()" title="Export all data as CSV">
+      ↓ Export
+    </button>
+    <div style="text-align:right;">
+      <div id="hdate"></div>
+      <div>Bookings OS v2</div>
+    </div>
+  </div>
+</header>
+
+<!-- DETAIL PANEL -->
+<div class="panel-overlay" id="overlay" onclick="closePanel()"></div>
+<div class="side-panel" id="sidePanel">
+  <div class="panel-head">
+    <div>
+      <div class="panel-name" id="pName">—</div>
+      <div style="margin-top:6px;font-size:10px;color:var(--text-muted);letter-spacing:.08em;" id="pStageLabel">—</div>
+    </div>
+    <button class="panel-close" onclick="closePanel()">✕</button>
+  </div>
+  <div id="panelBanner"></div>
+  <div class="panel-body" id="panelBody"></div>
+</div>
+
+<!-- ── DASHBOARD ── -->
+<div id="view-dashboard" class="view active">
+<div class="dash">
+
+  <div class="dash-top">
+    <div class="dash-title">
+      <h1>Party <span style="color:var(--gold)">Pipeline</span></h1>
+      <p id="dash-subtitle">Loading inquiries…</p>
+    </div>
+  </div>
+
+  <div class="stats" id="statsRow"></div>
+
+
+  <!-- PIPELINE LEGEND -->
+  <div class="legend-bar" id="legendBar">
+    <button class="legend-toggle" onclick="toggleLegend()">
+      <span class="legend-toggle-label">Pipeline key — stages, flags & comms</span>
+      <span class="legend-chevron" id="legendChevron">▾</span>
+    </button>
+    <div class="legend-body" id="legendBody">
+      <div class="legend-sections">
+
+        <!-- LEFT COLUMN -->
+        <div>
+          <div class="legend-section-title">Pipeline Stages</div>
+
+          <div class="legend-item">
+            <div class="legend-icon" style="color:var(--stage-working)">●</div>
+            <div class="legend-text">
+              <div class="legend-term" style="color:var(--stage-working)">Working</div>
+              <div class="legend-def">Inquiry received, actively in conversation. Date offered or TBD. Not yet committed to booking.</div>
+            </div>
+          </div>
+
+          <div class="legend-item">
+            <div class="legend-icon" style="color:var(--stage-close)">●</div>
+            <div class="legend-text">
+              <div class="legend-term" style="color:var(--stage-close)">Close the Deal ⚡</div>
+              <div class="legend-def">Party date is imminent — within days. Client is warm or has expressed intent to pay. Needs immediate follow-up to convert.</div>
+            </div>
+          </div>
+
+          <div class="legend-item">
+            <div class="legend-icon" style="color:var(--stage-booked)">●</div>
+            <div class="legend-text">
+              <div class="legend-term" style="color:var(--stage-booked)">Booked</div>
+              <div class="legend-def">Deposit paid and confirmed. Party is locked in on the calendar.</div>
+            </div>
+          </div>
+
+          <div class="legend-item">
+            <div class="legend-icon" style="color:var(--text-muted)">●</div>
+            <div class="legend-text">
+              <div class="legend-term" style="color:var(--text-dim)">Did Not Book</div>
+              <div class="legend-def">Client stopped responding, went in a different direction, or friends cancelled. Closed without a booking.</div>
+            </div>
+          </div>
+
+          <div class="legend-item">
+            <div class="legend-icon"><span style="color:var(--red);font-size:9px;">●</span></div>
+            <div class="legend-text">
+              <div class="legend-term" style="color:var(--red)">⚠ At Risk</div>
+              <div class="legend-def">A Working inquiry with no response logged in 24+ hours. Lead is in danger of going cold.</div>
+            </div>
+          </div>
+
+          <div class="legend-section-title" style="margin-top:20px;">Special Flags</div>
+
+          <div class="legend-item">
+            <div class="legend-icon">🛍</div>
+            <div class="legend-text">
+              <div class="legend-term">Swag Bag</div>
+              <div class="legend-def">120-minute party — Guest of Honor gift swag bag required. Prep needed before event day.</div>
+            </div>
+          </div>
+
+          <div class="legend-item">
+            <div class="legend-icon">🏠</div>
+            <div class="legend-text">
+              <div class="legend-term">Off-Site</div>
+              <div class="legend-def">Party is held at an external location (e.g. Air BnB). Mo must approve before confirming.</div>
+            </div>
+          </div>
+
+          <div class="legend-item">
+            <div class="legend-icon">💰</div>
+            <div class="legend-text">
+              <div class="legend-term">Big Money</div>
+              <div class="legend-def">Client is spending $600 or more. High-value booking — handle with care.</div>
+            </div>
+          </div>
+
+          <div class="legend-item">
+            <div class="legend-icon">Ⓜ</div>
+            <div class="legend-text">
+              <div class="legend-term">Mo's Client</div>
+              <div class="legend-def">Mo directly engaged with or booked this client. She is the primary point of contact.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN -->
+        <div>
+          <div class="legend-section-title">Communication Log</div>
+
+          <div class="legend-item">
+            <div class="legend-icon"><span class="comm-dot comm-email" style="width:20px;height:20px;font-size:9px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;">E</span></div>
+            <div class="legend-text">
+              <div class="legend-term">Emailed</div>
+              <div class="legend-def">Replied to inquiry by email.</div>
+            </div>
+          </div>
+
+          <div class="legend-item">
+            <div class="legend-icon"><span class="comm-dot comm-follow" style="width:20px;height:20px;font-size:9px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;">F</span></div>
+            <div class="legend-text">
+              <div class="legend-term">Followed Up</div>
+              <div class="legend-def">Sent a second follow-up email after no response to the first.</div>
+            </div>
+          </div>
+
+          <div class="legend-item">
+            <div class="legend-icon"><span class="comm-dot comm-follow" style="width:20px;height:20px;font-size:9px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;">♻</span></div>
+            <div class="legend-text">
+              <div class="legend-term">Client Engaged</div>
+              <div class="legend-def">Client responded with questions or showed active interest.</div>
+            </div>
+          </div>
+
+          <div class="legend-item">
+            <div class="legend-icon"><span class="comm-dot comm-call" style="width:20px;height:20px;font-size:9px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;">C</span></div>
+            <div class="legend-text">
+              <div class="legend-term">Called</div>
+              <div class="legend-def">Phone call was made to the client.</div>
+            </div>
+          </div>
+
+          <div class="legend-item">
+            <div class="legend-icon"><span class="comm-dot comm-text" style="width:20px;height:20px;font-size:9px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;">T</span></div>
+            <div class="legend-text">
+              <div class="legend-term">Texted</div>
+              <div class="legend-def">Text or WhatsApp message sent to the client.</div>
+            </div>
+          </div>
+
+          <div class="legend-section-title" style="margin-top:20px;">Themes</div>
+
+          <div class="legend-item">
+            <div class="legend-icon">💡</div>
+            <div class="legend-text">
+              <div class="legend-term">Black Light / Glow in the Dark</div>
+              <div class="legend-def">UV lighting setup required. Coordinate with studio before confirming.</div>
+            </div>
+          </div>
+
+          <div class="legend-item">
+            <div class="legend-icon">🤠</div>
+            <div class="legend-text">
+              <div class="legend-term">Western</div>
+              <div class="legend-def">Western theme — decor and playlist coordination.</div>
+            </div>
+          </div>
+
+          <div class="legend-item">
+            <div class="legend-icon">🎓</div>
+            <div class="legend-text">
+              <div class="legend-term">Teachers Pet</div>
+              <div class="legend-def">Teachers Pet theme — specific class format and setup.</div>
+            </div>
+          </div>
+
+          <div class="legend-item">
+            <div class="legend-icon">🛏</div>
+            <div class="legend-text">
+              <div class="legend-term">PJ / Sleepover</div>
+              <div class="legend-def">Pajama / sleepover theme — cozy setup required.</div>
+            </div>
+          </div>
+
+          <div class="legend-item">
+            <div class="legend-icon">🔥</div>
+            <div class="legend-text">
+              <div class="legend-term">Sensual</div>
+              <div class="legend-def">Sensual / pole-floorwork combo. Specific instructor pairing may be requested.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="filters">
+    <button class="filt active" data-f="all" onclick="applyFilter(this)">All</button>
+    <button class="filt" data-f="working" onclick="applyFilter(this)">Working</button>
+    <button class="filt" data-f="close" onclick="applyFilter(this)">Close the Deal</button>
+    <button class="filt" data-f="booked" onclick="applyFilter(this)">Booked</button>
+    <button class="filt" data-f="lost" onclick="applyFilter(this)">Did Not Book</button>
+    <button class="filt" data-f="atrisk" onclick="applyFilter(this)" style="color:var(--red);border-color:rgba(224,82,82,0.3);">⚠ At Risk</button>
+    <div class="search-bar"><input type="text" id="searchBox" placeholder="Search name…" oninput="renderPipeline()"></div>
+  </div>
+
+  <div class="pipeline" id="pipeline"></div>
+</div>
+</div>
+
+<!-- ── ENTRY FORM ── -->
+<div id="view-entry" class="view">
+<div class="entry-wrap">
+  <div class="entry-head">
+    <h1>Log an <span style="color:var(--gold)">inquiry</span></h1>
+    <p>Every lead deserves a proper home</p>
+  </div>
+
+  <div class="fsec">
+    <div class="fsec-label">Contact</div>
+    <div class="frow">
+      <div class="fld"><label>Full Name *</label><input id="f-name" type="text" placeholder="e.g. Zara Mensah"></div>
+      <div class="fld"><label>Phone / WhatsApp</label><input id="f-phone" type="text" placeholder="+1 000 000 0000"></div>
+    </div>
+    <div class="frow single">
+      <div class="fld"><label>Email</label><input id="f-email" type="email" placeholder="email@address.com"></div>
+    </div>
+  </div>
+
+  <div class="fsec">
+    <div class="fsec-label">Event Details</div>
+    <div class="frow triple">
+      <div class="fld"><label>Event Date *</label><input id="f-date" type="date"></div>
+      <div class="fld"><label>Start Time</label><input id="f-time" type="time"></div>
+      <div class="fld"><label>Party Size</label><input id="f-size" type="number" placeholder="e.g. 10" min="1"></div>
+    </div>
+    <div class="frow">
+      <div class="fld">
+        <label>Duration</label>
+        <select id="f-dur">
+          <option value="">— Select —</option>
+          <option>60 min</option>
+          <option>90 min</option>
+          <option>120 min</option>
+          <option>Custom</option>
+        </select>
+      </div>
+      <div class="fld">
+        <label>Event Type</label>
+        <select id="f-type">
+          <option value="">— Select —</option>
+          <option>Birthday</option>
+          <option>Bachelorette</option>
+          <option>Girls Night Out</option>
+          <option>Corporate / Brand</option>
+          <option>Anniversary</option>
+          <option>Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="fsec" style="margin-bottom:0;margin-top:14px;">
+      <div class="fsec-label" style="margin-bottom:10px;">Theme</div>
+      <div class="tag-group" id="themeGroup">
+        <button class="tag-btn" data-theme="Black Light" onclick="toggleTag(this,'theme')">Black Light</button>
+        <button class="tag-btn" data-theme="Western" onclick="toggleTag(this,'theme')">Western</button>
+        <button class="tag-btn" data-theme="Teachers Pet" onclick="toggleTag(this,'theme')">Teachers Pet</button>
+        <button class="tag-btn" data-theme="PJ / Sleepover" onclick="toggleTag(this,'theme')">PJ / Sleepover</button>
+        <button class="tag-btn" data-theme="Sensual" onclick="toggleTag(this,'theme')">Sensual</button>
+      </div>
+    </div>
+    <div class="frow single" style="margin-top:14px;">
+      <div class="fld"><label>Notes</label><textarea id="f-notes" placeholder="Special requests, vibe, budget, add-ons…"></textarea></div>
+    </div>
+  </div>
+
+  <div class="fsec">
+    <div class="fsec-label">Inquiry Stage</div>
+    <div class="tag-group" id="stageGroup">
+      <button class="tag-btn sel" data-stage="working" onclick="toggleTag(this,'stage')">Working</button>
+      <button class="tag-btn" data-stage="close" onclick="toggleTag(this,'stage')">Close the Deal</button>
+      <button class="tag-btn" data-stage="booked" onclick="toggleTag(this,'stage')">Booked</button>
+      <button class="tag-btn" data-stage="lost" onclick="toggleTag(this,'stage')">Did Not Book</button>
+    </div>
+  </div>
+
+  <div class="fsec">
+    <div class="fsec-label">Communication Log</div>
+    <div class="comm-toggles">
+      <button class="comm-toggle" data-comm="emailed" onclick="toggleComm(this)">✉ Emailed</button>
+      <button class="comm-toggle" data-comm="followed_up" onclick="toggleComm(this)">✳ Followed Up</button>
+      <button class="comm-toggle" data-comm="engagement" onclick="toggleComm(this)">♻ Client Engaged</button>
+      <button class="comm-toggle" data-comm="called" onclick="toggleComm(this)">☎ Called</button>
+      <button class="comm-toggle" data-comm="texted" onclick="toggleComm(this)">📱 Texted</button>
+    </div>
+  </div>
+
+  <div class="fsec">
+    <div class="fsec-label">Special Flags</div>
+    <div class="flag-toggles">
+      <button class="flag-toggle" data-flag="swag" onclick="toggleFlag(this)">🛍 Swag Bag (120 min GOH)</button>
+      <button class="flag-toggle" data-flag="offsite" onclick="toggleFlag(this)">🏠 Off-Site (Mo approval)</button>
+      <button class="flag-toggle" data-flag="bigmoney" onclick="toggleFlag(this)">💰 Big Money ($600+)</button>
+      <button class="flag-toggle" data-flag="mo" onclick="toggleFlag(this)">Ⓜ Mo's Client</button>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <button class="btn-save" onclick="saveEntry()">Save Inquiry</button>
+    <button class="btn-clear" onclick="clearForm()">Clear</button>
+  </div>
+  <div class="save-flash" id="saveFlash">✓ Saved — visible in Pipeline</div>
+
+  <div class="dup-warning" id="dupWarning">
+    <div class="dup-warning-head">⚠ Possible duplicate detected</div>
+    <div class="dup-warning-matches" id="dupMatches"></div>
+    <div class="dup-actions">
+      <button class="btn-dup-save" onclick="forceSave()">Save anyway</button>
+      <button class="btn-dup-cancel" onclick="dismissDup()">Go back and review</button>
+    </div>
+  </div>
+</div>
+</div>
+
+
+<!-- ── ARCHIVE VIEW ── -->
+<div id="view-archive" class="view">
+<div class="archive-wrap">
+  <div class="archive-head">
+    <h1>Party <span style="color:var(--gold)">Archive</span></h1>
+    <p>Every party that ever flew at Fly Club</p>
+  </div>
+
+  <div class="archive-stats" id="archiveStats"></div>
+
+  <div class="archive-search">
+    <input type="text" id="archiveSearch" placeholder="Search name or event type…" oninput="renderArchive()">
+  </div>
+
+  <div id="archiveBody"></div>
+</div>
+</div>
+
+
+
+<!-- ── EXPORT MODAL ── -->
+<div class="export-overlay" id="exportOverlay" onclick="closeExport(event)">
+  <div class="export-modal" onclick="event.stopPropagation()">
+    <div class="export-modal-head">
+      <h2>Export Data</h2>
+      <button class="panel-close" onclick="closeExport()">✕</button>
+    </div>
+    <div class="export-modal-body">
+      <p>Download a CSV snapshot of your data at any time — for auditing, backup, or manual reference. Each export is date-stamped.</p>
+      <div class="export-options">
+        <div class="export-opt" onclick="runExport('pipeline')">
+          <div class="export-opt-title">↓ Pipeline</div>
+          <div class="export-opt-desc">All active inquiries — working, close the deal, booked, and did not book</div>
+        </div>
+        <div class="export-opt" onclick="runExport('archive')">
+          <div class="export-opt-title">↓ Archive</div>
+          <div class="export-opt-desc">All completed parties from the historical record</div>
+        </div>
+        <div class="export-opt" onclick="runExport('booked')">
+          <div class="export-opt-title">↓ Confirmed Only</div>
+          <div class="export-opt-desc">Just the booked, deposit-paid upcoming parties</div>
+        </div>
+        <div class="export-opt" onclick="runExport('all')">
+          <div class="export-opt-title">↓ Full Export</div>
+          <div class="export-opt-desc">Everything — pipeline + archive in one file</div>
+        </div>
+      </div>
+    </div>
+    <div class="export-modal-foot">
+      <button class="btn-clear" onclick="closeExport()">Close</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+// ── DATA ──
+let inquiries = [
+  // WORKING
+  { id:1, name:"Audreana B", phone:"773-931-2309", email:"audreana922@hotmail.com", date:"TBD", time:"", size:"TBD", duration:"TBD", type:"Birthday", theme:"", notes:"Date, party length TBD at a later date", stage:"working", comms:[], flags:[], inquiryDate:"2026-01-01", created: Date.now()-86400000*20 },
+  { id:2, name:"Caylin", phone:"", email:"", date:"2026-09-26", time:"20:00", size:8, duration:"90 min", type:"Birthday", theme:"Black Light", notes:"", stage:"working", comms:["emailed","followed_up","texted"], flags:[], inquiryDate:"2026-01-10", created: Date.now()-86400000*25 },
+  { id:3, name:"Tamanika", phone:"", email:"", date:"2026-08-01", time:"17:00", size:10, duration:"90 min", type:"Birthday", theme:"", notes:"Will call back Mon Mar 16th to pay deposit", stage:"working", comms:["called","texted","called"], flags:[], inquiryDate:"2026-02-17", created: Date.now()-86400000*18 },
+  { id:4, name:"Chloe", phone:"", email:"", date:"2026-06-13", time:"17:00", size:11, duration:"60 min", type:"Bachelorette", theme:"", notes:"Sister's bachelorette", stage:"working", comms:["texted","emailed"], flags:[], inquiryDate:"2026-03-15", created: Date.now()-86400000*10 },
+  { id:5, name:"Priyanshi", phone:"", email:"", date:"2026-06-13", time:"15:00", size:5, duration:"60 min", type:"Bachelorette", theme:"", notes:"", stage:"working", comms:["called","called","texted","followed_up","texted"], flags:[], inquiryDate:"2026-02-15", created: Date.now()-86400000*38 },
+  { id:6, name:"Kelly M", phone:"", email:"", date:"2026-05-29", time:"14:00", size:9, duration:"60 min", type:"Bachelorette", theme:"", notes:"", stage:"working", comms:["called","called","texted","emailed","called"], flags:[], inquiryDate:"2026-02-01", created: Date.now()-86400000*52 },
+  { id:7, name:"Roccky", phone:"", email:"", date:"2026-05-09", time:"17:00", size:9, duration:"90 min", type:"Birthday", theme:"", notes:"35th birthday", stage:"working", comms:["called","texted"], flags:[], inquiryDate:"2026-03-11", created: Date.now()-86400000*14 },
+  { id:8, name:"Lynsey R", phone:"No phone", email:"", date:"2026-05-08", time:"15:00", size:4, duration:"60 min", type:"Bachelorette", theme:"", notes:"", stage:"working", comms:["followed_up","emailed"], flags:[], inquiryDate:"2026-02-26", created: Date.now()-86400000*27 },
+  { id:9, name:"Tamia W", phone:"", email:"", date:"2026-04-25", time:"19:00", size:6, duration:"60 min", type:"Birthday", theme:"", notes:"23rd birthday — back to back parties, confirm exact time 6:45 or 7pm", stage:"working", comms:["texted","emailed"], flags:[], inquiryDate:"2026-03-15", created: Date.now()-86400000*10 },
+  { id:10, name:"Taqueria", phone:"", email:"", date:"2026-04-24", time:"13:30", size:6, duration:"Custom", type:"Birthday", theme:"Black Light", notes:"", stage:"working", comms:["texted","texted","texted","emailed"], flags:["bigmoney"], inquiryDate:"2026-02-22", created: Date.now()-86400000*31 },
+  { id:11, name:"Natasha L", phone:"", email:"", date:"2026-04-18", time:"18:30", size:8, duration:"90 min", type:"Birthday", theme:"", notes:"Planning to pay deposit March 13th", stage:"working", comms:["called","texted","called"], flags:[], inquiryDate:"2026-03-01", created: Date.now()-86400000*24 },
+  { id:12, name:"Chkeisha", phone:"", email:"", date:"2026-04-18", time:"15:00", size:6, duration:"90 min", type:"Birthday", theme:"", notes:"Offered 3pm due to studio event later", stage:"working", comms:["called","engagement","called","texted","emailed"], flags:["bigmoney"], inquiryDate:"2026-03-18", created: Date.now()-86400000*7 },
+  { id:13, name:"Anaya W", phone:"Wrong #", email:"", date:"2026-04-11", time:"19:00", size:10, duration:"60 min", type:"Birthday", theme:"", notes:"22nd birthday — wants fun sexy vibes. Wrong phone number on file.", stage:"working", comms:["emailed"], flags:[], inquiryDate:"2026-03-18", created: Date.now()-86400000*7 },
+  { id:14, name:"Jakia W", phone:"", email:"", date:"2026-04-04", time:"18:30", size:10, duration:"60 min", type:"Birthday", theme:"Black Light", notes:"25th birthday, offered 6:30pm", stage:"working", comms:["emailed"], flags:[], inquiryDate:"2026-03-20", created: Date.now()-86400000*5 },
+  { id:15, name:"Bolorzul", phone:"No phone", email:"", date:"2026-04-04", time:"17:30", size:6, duration:"60 min", type:"Bachelorette", theme:"", notes:"", stage:"working", comms:["followed_up","emailed","mo"], flags:["mo"], inquiryDate:"2026-02-24", created: Date.now()-86400000*29 },
+
+  // CLOSE THE DEAL
+  { id:20, name:"Jazmine B", phone:"", email:"", date:"2026-03-29", time:"14:00", size:7, duration:"90 min", type:"Other", theme:"Black Light", notes:"Offered Sun Mar 29th 2pm", stage:"close", comms:["called","texted","called","emailed"], flags:["mo"], inquiryDate:"2026-03-13", created: Date.now()-86400000*12 },
+  { id:21, name:"Alicia L", phone:"No phone", email:"", date:"2026-03-29", time:"14:00", size:8, duration:"90 min", type:"Girls Night Out", theme:"", notes:"Offered Sun Mar 29th 2pm", stage:"close", comms:["followed_up","followed_up","emailed"], flags:[], inquiryDate:"2026-03-07", created: Date.now()-86400000*18 },
+  { id:22, name:"Dra S", phone:"", email:"", date:"2026-03-27", time:"22:30", size:6, duration:"Custom", type:"Birthday", theme:"Black Light", notes:"Getting final head count — intends to pay tomorrow", stage:"close", comms:["called","texted","called","texted","called","texted","texted","emailed"], flags:[], inquiryDate:"2026-02-23", created: Date.now()-86400000*30 },
+  { id:23, name:"Imani", phone:"", email:"", date:"2026-03-27", time:"19:00", size:6, duration:"60 min", type:"Birthday", theme:"", notes:"Surprise birthday for sister. Teaches heels & twerk in Chicago. House burnt down but still plans on doing the party — follow up end of week.", stage:"close", comms:["texted","texted","called","emailed"], flags:["bigmoney"], inquiryDate:"2026-03-07", created: Date.now()-86400000*18 },
+
+  // BOOKED
+  { id:30, name:"Jessica B", phone:"", email:"", date:"2026-07-18", time:"12:00", size:12, duration:"60 min", type:"Bachelorette", theme:"Western", notes:"Needs 12pm–2pm", stage:"booked", comms:["engagement","emailed"], flags:[], inquiryDate:"2026-01-01", created: Date.now()-86400000*60 },
+  { id:31, name:"Luhannauh", phone:"", email:"", date:"2026-07-11", time:"17:00", size:10, duration:"120 min", type:"Bachelorette", theme:"", notes:"Pole/twerk/chair combo", stage:"booked", comms:[], flags:["swag"], inquiryDate:"2026-01-15", created: Date.now()-86400000*55 },
+  { id:32, name:"Jalah L", phone:"", email:"", date:"2026-06-13", time:"13:15", size:12, duration:"90 min", type:"Other", theme:"Black Light", notes:"9–12 guests, offered 1:15pm", stage:"booked", comms:[], flags:[], inquiryDate:"2026-03-25", created: Date.now()-86400000*0 },
+  { id:33, name:"Rachel Z", phone:"", email:"", date:"2026-05-01", time:"12:00", size:10, duration:"60 min", type:"Bachelorette", theme:"", notes:"Off site twerk class — Air BnB River North", stage:"booked", comms:["called"], flags:["offsite"], inquiryDate:"2026-02-01", created: Date.now()-86400000*52 },
+  { id:34, name:"Ebony", phone:"", email:"", date:"2026-04-25", time:"20:45", size:15, duration:"120 min", type:"Birthday", theme:"", notes:"120 min + 1hr dark room rental. Bringing food, drink, and decorations. 8–15 guests.", stage:"booked", comms:["texted","texted","texted","called","texted","called","texted","called"], flags:["swag","bigmoney"], inquiryDate:"2026-02-10", created: Date.now()-86400000*43 },
+  { id:35, name:"Dejah", phone:"", email:"", date:"2026-04-25", time:"20:00", size:9, duration:"120 min", type:"Birthday", theme:"Black Light", notes:"Teacher Pet theme also. 9 guests expected.", stage:"booked", comms:["engagement","texted","emailed"], flags:["swag","bigmoney"], inquiryDate:"2026-02-15", created: Date.now()-86400000*38 },
+  { id:36, name:"Natalia C", phone:"", email:"", date:"2026-04-25", time:"15:00", size:10, duration:"90 min", type:"Bachelorette", theme:"", notes:"", stage:"booked", comms:["texted","emailed"], flags:[], inquiryDate:"2026-02-20", created: Date.now()-86400000*33 },
+  { id:37, name:"Tra'nesha", phone:"", email:"", date:"2026-04-25", time:"13:15", size:7, duration:"90 min", type:"Birthday", theme:"", notes:"", stage:"booked", comms:["texted","called","emailed"], flags:["mo"], inquiryDate:"2026-02-20", created: Date.now()-86400000*33 },
+  { id:38, name:"Jamayer", phone:"", email:"", date:"2026-04-11", time:"19:00", size:8, duration:"120 min", type:"Birthday", theme:"", notes:"", stage:"booked", comms:["engagement","emailed"], flags:["swag"], inquiryDate:"2026-02-25", created: Date.now()-86400000*28 },
+  { id:39, name:"Nataly", phone:"", email:"", date:"2026-04-11", time:"17:00", size:6, duration:"60 min", type:"Bachelorette", theme:"", notes:"Originally 4:30pm, now wants 5pm", stage:"booked", comms:["texted","called","emailed"], flags:[], inquiryDate:"2026-03-01", created: Date.now()-86400000*24 },
+  { id:40, name:"Amber T", phone:"", email:"", date:"2026-04-05", time:"19:00", size:4, duration:"90 min", type:"Birthday", theme:"Sensual", notes:"Pole/floorwork combo, sensual energy", stage:"booked", comms:["followed_up","emailed"], flags:["mo"], inquiryDate:"2026-03-05", created: Date.now()-86400000*20 },
+  { id:41, name:"Susan B", phone:"", email:"", date:"2026-04-05", time:"14:00", size:5, duration:"60 min", type:"Bachelorette", theme:"", notes:"", stage:"booked", comms:[], flags:[], inquiryDate:"2026-03-05", created: Date.now()-86400000*20 },
+  { id:42, name:"Raquel", phone:"", email:"", date:"2026-04-04", time:"20:00", size:14, duration:"120 min", type:"Birthday", theme:"", notes:"Red or pink lighting", stage:"booked", comms:["texted","emailed"], flags:["swag","bigmoney"], inquiryDate:"2026-03-01", created: Date.now()-86400000*24 },
+  { id:43, name:"Kiesha B", phone:"", email:"", date:"2026-04-04", time:"16:30", size:7, duration:"120 min", type:"Birthday", theme:"", notes:"", stage:"booked", comms:["called","mo"], flags:["swag","mo"], inquiryDate:"2026-03-01", created: Date.now()-86400000*24 },
+  { id:44, name:"Derrica", phone:"", email:"", date:"2026-04-04", time:"13:30", size:8, duration:"60 min", type:"Birthday", theme:"", notes:"", stage:"booked", comms:["texted","called","emailed"], flags:[], inquiryDate:"2026-03-05", created: Date.now()-86400000*20 },
+  { id:45, name:"Sania I", phone:"", email:"", date:"2026-03-29", time:"17:30", size:8, duration:"90 min", type:"Birthday", theme:"", notes:"", stage:"booked", comms:["emailed","mo"], flags:["mo"], inquiryDate:"2026-03-10", created: Date.now()-86400000*15 },
+  { id:46, name:"Tiera D", phone:"", email:"", date:"2026-03-28", time:"18:45", size:8, duration:"60 min", type:"Girls Night Out", theme:"", notes:"", stage:"booked", comms:["engagement","called","texted","emailed"], flags:[], inquiryDate:"2026-03-10", created: Date.now()-86400000*15 },
+  { id:47, name:"Nicole", phone:"", email:"", date:"TBD", time:"", size:8, duration:"60 min", type:"Birthday", theme:"", notes:"30th birthday — called 3/25 to reschedule, new date/time TBD", stage:"booked", comms:["called"], flags:[], inquiryDate:"2026-03-10", created: Date.now()-86400000*15 },
+  { id:48, name:"Adaora", phone:"", email:"", date:"2026-03-28", time:"15:00", size:9, duration:"90 min", type:"Birthday", theme:"Black Light", notes:"Birthday for friend — Black Light theme TBC", stage:"booked", comms:["texted","called","emailed","mo"], flags:["mo"], inquiryDate:"2026-03-10", created: Date.now()-86400000*15 },
+  { id:49, name:"LaTrice Miller", phone:"", email:"", date:"2026-03-28", time:"14:00", size:8, duration:"90 min", type:"Birthday", theme:"", notes:"27th birthday — Light Room", stage:"booked", comms:["texted","called","emailed"], flags:["bigmoney"], inquiryDate:"2026-03-10", created: Date.now()-86400000*15 },
+  { id:50, name:"Ashanti", phone:"", email:"", date:"2026-03-27", time:"20:45", size:10, duration:"60 min", type:"Birthday", theme:"", notes:"35th birthday", stage:"booked", comms:["texted","emailed"], flags:["bigmoney"], inquiryDate:"2026-03-12", created: Date.now()-86400000*13 },
+  { id:51, name:"Kash", phone:"", email:"", date:"2026-03-24", time:"21:30", size:8, duration:"60 min", type:"Birthday", theme:"", notes:"After hours fee $75 (starts after 8:45pm). Paid deposit in person at studio.", stage:"booked", comms:["called"], flags:[], inquiryDate:"2026-03-15", created: Date.now()-86400000*10 },
+
+  // DID NOT BOOK
+  { id:60, name:"Rai W", phone:"", email:"", date:"2026-03-21", time:"12:00", size:8, duration:"60 min", type:"Bachelorette", theme:"Black Light", notes:"Ghost — stopped responding, never booked", stage:"lost", comms:["texted","called","called","texted","emailed","called"], flags:[], inquiryDate:"2026-02-19", created: Date.now()-86400000*34 },
+  { id:61, name:"Angelica D", phone:"", email:"", date:"2026-03-28", time:"", size:12, duration:"60-90 min", type:"Birthday", theme:"", notes:"34th birthday — decided to do something else", stage:"lost", comms:["texted","emailed"], flags:[], inquiryDate:"2026-03-03", created: Date.now()-86400000*22 },
+  { id:62, name:"Nevaeh", phone:"", email:"", date:"2026-03-27", time:"12:00", size:12, duration:"60 min", type:"Birthday", theme:"", notes:"Friends cancelled", stage:"lost", comms:["called","called","texted","emailed"], flags:[], inquiryDate:"2026-03-04", created: Date.now()-86400000*21 },
+  { id:63, name:"Bailey", phone:"", email:"", date:"2026-05-01", time:"16:00", size:12, duration:"60 min", type:"Bachelorette", theme:"", notes:"Declined", stage:"lost", comms:["texted","emailed","texted","texted","emailed"], flags:[], inquiryDate:"2026-01-19", created: Date.now()-86400000*64 },
+];
+
+let nextId = 100;
+
+// ── ARCHIVE DATA (Old Booked Parties) ──
+const archivedParties = [
+  // MARCH 2026
+  { name:"Tyler", date:"2026-03-21", time:"17:30", size:8, duration:"60 min", type:"Birthday", theme:"", notes:"", flags:["bigmoney"], comms:["engagement","texted","emailed"] },
+  { name:"Samantha", date:"2026-03-21", time:"15:00", size:10, duration:"60 min", type:"Bachelorette", theme:"", notes:"", flags:[], comms:[] },
+  { name:"Alyne M", date:"2026-03-21", time:"13:15", size:13, duration:"60 min", type:"Bachelorette", theme:"", notes:"", flags:[], comms:["called"] },
+  { name:"Quianna", date:"2026-03-18", time:"19:45", size:8, duration:"60 min", type:"Birthday", theme:"", notes:"Changed from Mar 17th 6pm → Mar 18th 7:45pm", flags:["bigmoney"], comms:["texted","called","texted","emailed"] },
+  { name:"Tylon", date:"2026-03-15", time:"17:30", size:15, duration:"120 min", type:"Birthday", theme:"", notes:"1 hr Dark Room rental before AND after", flags:["swag"], comms:[] },
+  { name:"Angela D", date:"2026-03-13", time:"12:00", size:6, duration:"60 min", type:"Bachelorette", theme:"", notes:"", flags:[], comms:["texted","emailed"] },
+  { name:"Jorie", date:"2026-03-10", time:"21:30", size:15, duration:"90 min", type:"Other", theme:"Black Light", notes:"Pole/silks combo", flags:["bigmoney"], comms:["followed_up","engagement","called","called"] },
+  { name:"Kelsey C", date:"2026-03-07", time:"15:00", size:6, duration:"60 min", type:"Birthday", theme:"", notes:"Bringing cake", flags:[], comms:["followed_up","texted","engagement","emailed"] },
+  { name:"Daisy D", date:"2026-03-01", time:"11:00", size:5, duration:"60 min", type:"Birthday", theme:"", notes:"", flags:[], comms:["engagement","texted","emailed"] },
+  // FEBRUARY 2026
+  { name:"Gemaya", date:"2026-02-28", time:"17:30", size:8, duration:"60 min", type:"Girls Night Out", theme:"", notes:"", flags:[], comms:["called","texted","emailed"] },
+  { name:"Jawana", date:"2026-02-28", time:"15:00", size:8, duration:"60 min", type:"Birthday", theme:"", notes:"30th birthday, coming from Michigan", flags:[], comms:["called"] },
+  { name:"Shay Williams", date:"2026-02-27", time:"18:30", size:8, duration:"60 min", type:"Birthday", theme:"", notes:"", flags:[], comms:["emailed","texted","called"] },
+  { name:"Spring", date:"2026-02-21", time:"18:45", size:8, duration:"90 min", type:"Birthday", theme:"Black Light", notes:"", flags:[], comms:[] },
+  { name:"Kenesha", date:"2026-02-21", time:"17:00", size:11, duration:"90 min", type:"Birthday", theme:"", notes:"", flags:[], comms:[] },
+  { name:"Marie S", date:"2026-02-21", time:"15:00", size:8, duration:"60 min", type:"Bachelorette", theme:"", notes:"Mo hosting — old friend", flags:["mo"], comms:[] },
+  { name:"Jalan", date:"2026-02-20", time:"20:00", size:8, duration:"90 min", type:"Birthday", theme:"", notes:"24th birthday", flags:[], comms:[] },
+  { name:"Tia Walk", date:"2026-02-20", time:"18:00", size:5, duration:"60 min", type:"Birthday", theme:"", notes:"", flags:[], comms:[] },
+  { name:"Jasymn M", date:"2026-02-19", time:"14:00", size:12, duration:"60 min", type:"Bachelorette", theme:"", notes:"", flags:[], comms:["called"] },
+  { name:"Kristian", date:"2026-02-15", time:"", size:8, duration:"60 min", type:"Birthday", theme:"", notes:"", flags:[], comms:[] },
+  { name:"Kara", date:"2026-02-13", time:"17:00", size:6, duration:"60 min", type:"Birthday", theme:"Black Light", notes:"Black Light theme TBC", flags:[], comms:[] },
+  { name:"Mia B", date:"2026-02-07", time:"20:30", size:8, duration:"60 min", type:"Birthday", theme:"", notes:"May have wanted to upgrade to 90 min", flags:[], comms:[] },
+  { name:"Alyssa", date:"2026-02-07", time:"18:30", size:8, duration:"90 min", type:"Girls Night Out", theme:"", notes:"", flags:[], comms:[] },
+  { name:"Johnika", date:"2026-02-07", time:"16:30", size:8, duration:"120 min", type:"Birthday", theme:"", notes:"40th birthday — rescheduled TBD", flags:["swag"], comms:[] },
+  { name:"Tia", date:"2026-02-07", time:"15:00", size:15, duration:"90 min", type:"Girls Night Out", theme:"", notes:"Galentine's Ladies Night Out", flags:[], comms:["texted","called","emailed"] },
+  { name:"Amanda Porter", date:"2026-02-07", time:"13:15", size:8, duration:"90 min", type:"Birthday", theme:"", notes:"", flags:[], comms:[] },
+  { name:"Tashanae", date:"2026-02-06", time:"19:30", size:11, duration:"90 min", type:"Other", theme:"", notes:"Galentines — changed date to Feb 6th", flags:[], comms:[] },
+  { name:"Ashley", date:"2026-02-06", time:"19:00", size:8, duration:"90 min", type:"Birthday", theme:"Black Light", notes:"Moved date to Feb 6th", flags:[], comms:[] },
+  // JANUARY 2026
+  { name:"Dieantana", date:"2026-01-31", time:"17:00", size:10, duration:"120 min", type:"Birthday", theme:"", notes:"", flags:["swag"], comms:[] },
+  { name:"Amanda Martinez", date:"2026-01-31", time:"15:00", size:8, duration:"60-90 min", type:"Other", theme:"", notes:"", flags:[], comms:[] },
+  { name:"Isis", date:"2026-01-30", time:"20:45", size:8, duration:"60 min", type:"Birthday", theme:"PJ / Sleepover", notes:"", flags:[], comms:[] },
+  { name:"Yanue", date:"2026-01-30", time:"20:00", size:8, duration:"60-90 min", type:"Birthday", theme:"", notes:"", flags:[], comms:[] },
+  { name:"Alana", date:"2026-01-30", time:"17:00", size:8, duration:"60 min", type:"Birthday", theme:"Black Light", notes:"21st birthday", flags:[], comms:[] },
+  { name:"Lateera", date:"2026-01-24", time:"19:00", size:8, duration:"90 min", type:"Birthday", theme:"", notes:"25th birthday", flags:[], comms:[] },
+  { name:"Mariella", date:"2026-01-24", time:"09:30", size:10, duration:"60 min", type:"Birthday", theme:"", notes:"Rich Boy Alex's friend — 60 min + 1 hr room rental", flags:[], comms:[] },
+  { name:"Micayla", date:"2026-01-18", time:"12:00", size:8, duration:"60 min", type:"Bachelorette", theme:"", notes:"", flags:[], comms:["engagement","texted","called","emailed"] },
+  { name:"Briana P", date:"2026-01-17", time:"15:00", size:8, duration:"90 min", type:"Birthday", theme:"", notes:"", flags:[], comms:[] },
+  { name:"Jin", date:"2026-01-11", time:"17:30", size:10, duration:"60 min", type:"Birthday", theme:"", notes:"", flags:[], comms:[] },
+  { name:"Amber", date:"2026-01-10", time:"", size:6, duration:"90 min", type:"Girls Night Out", theme:"", notes:"Doing Cherry Popper class instead — booked 6 friends for Jan 11 class", flags:[], comms:["emailed"] },
+  { name:"Jada L", date:"2026-01-10", time:"18:45", size:13, duration:"120 min", type:"Other", theme:"", notes:"", flags:["swag"], comms:[] },
+  { name:"Nika", date:"2026-01-03", time:"15:00", size:6, duration:"60 min", type:"Birthday", theme:"", notes:"", flags:[], comms:[] },
+  // DECEMBER 2025
+  { name:"Angel", date:"2025-12-20", time:"20:00", size:10, duration:"90 min", type:"Birthday", theme:"", notes:"", flags:[], comms:[] },
+  { name:"Jada P", date:"2025-12-21", time:"14:00", size:9, duration:"60 min", type:"Birthday", theme:"", notes:"", flags:[], comms:[] },
+  { name:"Jakiya", date:"2025-12-20", time:"13:15", size:8, duration:"60 min", type:"Birthday", theme:"Teachers Pet", notes:"Rescheduled from Nov 29th", flags:[], comms:[] },
+  { name:"Brittany C", date:"2025-12-18", time:"18:00", size:8, duration:"120 min", type:"Birthday", theme:"", notes:"", flags:["swag"], comms:[] },
+  { name:"Brittany A", date:"2025-12-17", time:"18:30", size:7, duration:"60 min", type:"Birthday", theme:"", notes:"", flags:[], comms:[] },
+  { name:"Taquoia", date:"2025-12-13", time:"21:30", size:8, duration:"90 min", type:"Birthday", theme:"Black Light", notes:"After hours fee $75", flags:[], comms:[] },
+  { name:"Josue", date:"2025-12-09", time:"15:30", size:8, duration:"60 min", type:"Birthday", theme:"", notes:"", flags:[], comms:["called"] },
+  { name:"Oceana", date:"2025-12-06", time:"17:00", size:8, duration:"60 min", type:"Birthday", theme:"Western", notes:"Client showed, friends did not. Mo handled.", flags:["mo"], comms:[] },
+  // NOVEMBER 2025
+  { name:"Abby (Annabelle)", date:"2025-11-22", time:"10:00", size:10, duration:"60 min", type:"Bachelorette", theme:"", notes:"", flags:[], comms:[] },
+  { name:"Kashauna", date:"2025-11-22", time:"16:30", size:7, duration:"60 min", type:"Birthday", theme:"", notes:"", flags:[], comms:[] },
+  { name:"Tianna", date:"2025-11-17", time:"20:00", size:"?", duration:"60 min", type:"Birthday", theme:"", notes:"", flags:[], comms:[] },
+  { name:"Gia", date:"2025-11-16", time:"17:15", size:8, duration:"120 min", type:"Birthday", theme:"", notes:"Pole/chair combo, balloons", flags:["swag"], comms:["called","engagement","emailed"] },
+  { name:"Anneisha O", date:"2025-11-16", time:"10:30", size:8, duration:"60 min", type:"Birthday", theme:"", notes:"Pole/chair combo + 1 hr Dark Room rental", flags:[], comms:[] },
+  { name:"Bryunna", date:"2025-11-15", time:"18:45", size:8, duration:"90 min", type:"Birthday", theme:"", notes:"Surprise birthday party", flags:[], comms:[] },
+  { name:"Aaliyah", date:"2025-11-15", time:"17:00", size:9, duration:"120 min", type:"Girls Night Out", theme:"", notes:"", flags:["swag","emailed"], comms:[] },
+  { name:"Cianna", date:"2025-11-15", time:"13:15", size:12, duration:"60 min", type:"Bachelorette", theme:"", notes:"", flags:[], comms:[] },
+  { name:"Daijahnique", date:"2025-11-14", time:"20:00", size:7, duration:"90 min", type:"Birthday", theme:"Black Light", notes:"", flags:[], comms:[] },
+  { name:"Jasmine G", date:"2025-11-08", time:"15:30", size:8, duration:"60 min", type:"Bachelorette", theme:"", notes:"", flags:[], comms:[] },
+  // OCTOBER 2025
+  { name:"Patricia", date:"2025-10-18", time:"19:00", size:10, duration:"90 min", type:"Birthday", theme:"", notes:"", flags:[], comms:["followed_up","engagement","texted","emailed"] },
+  { name:"Kaira", date:"2025-10-18", time:"19:00", size:6, duration:"120 min", type:"Birthday", theme:"", notes:"Bringing food", flags:["swag","mo"], comms:[] },
+  { name:"Allison E", date:"2025-10-18", time:"15:00", size:"?", duration:"60 min", type:"Other", theme:"", notes:"", flags:[], comms:[] },
+  { name:"Torri", date:"2025-10-18", time:"13:15", size:8, duration:"90 min", type:"Birthday", theme:"", notes:"", flags:[], comms:[] },
+  { name:"Kat", date:"2025-10-04", time:"18:00", size:8, duration:"120 min", type:"Birthday", theme:"", notes:"120 min + 1 hr dark room rental for social time", flags:["swag"], comms:["engagement","emailed"] },
+  { name:"Chanelle", date:"2025-10-03", time:"19:30", size:8, duration:"60 min", type:"Birthday", theme:"", notes:"Mom/daughter — pole/twerk combo", flags:[], comms:[] },
+];
+
+
+let activeFilter = 'all';
+let activeStage = 'working';
+let selectedTheme = '';
+let selectedFlags = [];
+let selectedComms = [];
+
+// ── HELPERS ──
+function isAtRisk(inq) {
+  return inq.stage === 'working' && (Date.now() - inq.created) > 86400000 * 1 && !inq.date.includes('TBD');
+}
+
+function stageLabel(s) {
+  return { working:'Working', close:'Close the Deal', booked:'Booked ✓', lost:'Did Not Book' }[s] || s;
+}
+
+function stageColor(s) {
+  return { working:'var(--stage-working)', close:'var(--stage-close)', booked:'var(--stage-booked)', lost:'var(--stage-lost)' }[s] || '';
+}
+
+function formatDate(d) {
+  if (!d || d === 'TBD') return 'Date TBD';
+  try {
+    const dt = new Date(d + 'T12:00:00');
+    return dt.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric' });
+  } catch { return d; }
+}
+
+function formatTime(t) {
+  if (!t) return '';
+  const [h, m] = t.split(':');
+  const hr = parseInt(h);
+  return `${hr > 12 ? hr-12 : (hr===0?12:hr)}:${m} ${hr>=12?'PM':'AM'}`;
+}
+
+function commLabel(c) {
+  return { emailed:'✉ Emailed', followed_up:'✳ Followed Up', engagement:'♻ Client Engaged', called:'☎ Called', texted:'📱 Texted', mo:'Ⓜ Mo Engaged' }[c] || c;
+}
+
+// ── RENDER STATS ──
+function renderStats() {
+  const total    = inquiries.length;
+  const working  = inquiries.filter(i=>i.stage==='working').length;
+  const close    = inquiries.filter(i=>i.stage==='close').length;
+  const booked   = inquiries.filter(i=>i.stage==='booked').length;
+  const atRisk   = inquiries.filter(i=>isAtRisk(i)).length;
+  const totalEver = booked + archivedParties.length;
+
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat" onclick="setStatFilter('all')"><div class="stat-num">${total}</div><div class="stat-label">Active Inquiries</div></div>
+    <div class="stat" onclick="setStatFilter('working')"><div class="stat-num gold">${working}</div><div class="stat-label">Working</div></div>
+    <div class="stat" onclick="setStatFilter('close')"><div class="stat-num" style="color:var(--red)">${close}</div><div class="stat-label">Close the Deal</div></div>
+    <div class="stat" onclick="setStatFilter('booked')"><div class="stat-num green">${booked}</div><div class="stat-label">Confirmed</div></div>
+    <div class="stat" onclick="setStatFilter('atrisk')"><div class="stat-num" style="color:var(--red);font-size:28px">${atRisk}</div><div class="stat-label">⚠ At Risk</div></div>
+    <div class="stat" style="cursor:default"><div class="stat-num" style="color:var(--gold);font-size:28px">${totalEver}</div><div class="stat-label">All-Time Parties</div></div>
+  `;
+  document.getElementById('statsRow').style.gridTemplateColumns = 'repeat(6,1fr)';
+  document.getElementById('dash-subtitle').textContent = `${total} active inquiries · ${booked} confirmed · ${totalEver} parties all-time`;
+}
+
+function setStatFilter(f) {
+  activeFilter = f;
+  document.querySelectorAll('.filt').forEach(el => {
+    el.classList.toggle('active', el.dataset.f === f);
+  });
+  renderPipeline();
+}
+
+// ── RENDER PIPELINE ──
+function renderPipeline() {
+  const search = (document.getElementById('searchBox')?.value||'').toLowerCase();
+  const stages = ['working','close','booked','lost'];
+  const stageTitles = { working:'Working', close:'Close the Deal ⚡', booked:'Booked', lost:'Did Not Book' };
+  const stageCls    = { working:'working', close:'close', booked:'booked', lost:'lost' };
+
+  let filtered = inquiries.filter(i => {
+    if (search && !i.name.toLowerCase().includes(search)) return false;
+    if (activeFilter === 'atrisk') return isAtRisk(i);
+    if (activeFilter !== 'all') return i.stage === activeFilter;
+    return true;
+  });
+
+  const activeStagesToShow = activeFilter === 'all' || activeFilter === 'atrisk'
+    ? stages
+    : [activeFilter];
+
+  const pipeline = document.getElementById('pipeline');
+  pipeline.style.gridTemplateColumns = activeStagesToShow.length === 1 ? '1fr' : `repeat(${activeStagesToShow.length}, 1fr)`;
+
+  pipeline.innerHTML = activeStagesToShow.map(stage => {
+    const cards = filtered.filter(i => i.stage === stage);
+    const cardsHTML = cards.length === 0
+      ? `<div style="padding:20px 0;text-align:center;color:var(--text-muted);font-size:11px;font-style:italic;">No inquiries</div>`
+      : cards.map(inq => cardHTML(inq)).join('');
+    return `
+      <div>
+        <div class="col-header ${stageCls[stage]}">
+          <span class="col-title ${stageCls[stage]}">${stageTitles[stage]}</span>
+          <span class="col-count">${cards.length}</span>
+        </div>
+        ${cardsHTML}
+      </div>`;
+  }).join('');
+}
+
+function cardHTML(inq) {
+  const risk = isAtRisk(inq);
+  const flagsHTML = [
+    inq.flags.includes('swag') ? `<span class="flag flag-swag">🛍 Swag Bag</span>` : '',
+    inq.flags.includes('offsite') ? `<span class="flag flag-offsite">🏠 Off-Site</span>` : '',
+    inq.flags.includes('bigmoney') ? `<span class="flag flag-bigmoney">💰 $600+</span>` : '',
+    inq.flags.includes('mo') ? `<span class="flag flag-mo">Ⓜ Mo's</span>` : '',
+    inq.theme ? `<span class="flag flag-theme">${inq.theme}</span>` : '',
+    risk ? `<span class="flag flag-risk">⚠ No Response</span>` : '',
+  ].filter(Boolean).join('');
+
+  const commDots = [...new Set(inq.comms)].map(c => {
+    const map = { emailed:'E', followed_up:'F', engagement:'♻', called:'C', texted:'T' };
+    const cls = { emailed:'comm-email', followed_up:'comm-follow', engagement:'comm-follow', called:'comm-call', texted:'comm-text' };
+    return `<div class="comm-dot ${cls[c]||'comm-email'}" title="${commLabel(c)}">${map[c]||'?'}</div>`;
+  }).join('');
+
+  return `
+    <div class="inq-card ${inq.stage}${risk?' at-risk':''}" onclick="openPanel(${inq.id})">
+      <div class="card-name">${risk?'<span class="risk-pulse"></span>':''} ${inq.name}</div>
+      <div class="card-date">${formatDate(inq.date)}${inq.time ? ' · ' + formatTime(inq.time) : ''}</div>
+      <div class="card-meta">${inq.duration || '—'} · ${inq.size} guests · ${inq.type}</div>
+      ${flagsHTML ? `<div class="card-flags">${flagsHTML}</div>` : ''}
+      ${commDots ? `<div class="card-comms">${commDots}</div>` : ''}
+      ${inq.notes ? `<div class="card-received" style="margin-top:6px;font-style:italic;color:var(--text-muted)">${inq.notes.slice(0,70)}${inq.notes.length>70?'…':''}</div>` : ''}
+    </div>`;
+}
+
+// ── PANEL ──
+function openPanel(id) {
+  const inq = inquiries.find(i=>i.id===id);
+  if (!inq) return;
+
+  document.getElementById('pName').textContent = inq.name;
+  document.getElementById('pStageLabel').innerHTML = `<span style="color:${stageColor(inq.stage)}">${stageLabel(inq.stage)}</span>`;
+
+  // Check if booked party date has passed → show archive banner
+  const bannerEl = document.getElementById('panelBanner');
+  bannerEl.innerHTML = '';
+  if (inq.stage === 'booked' && inq.date && inq.date !== 'TBD') {
+    const eventDate = new Date(inq.date + 'T23:59:59');
+    const today = new Date();
+    if (eventDate < today) {
+      const daysAgo = Math.floor((today - eventDate) / 86400000);
+      const daysText = daysAgo === 1 ? '1 day ago' : daysAgo + ' days ago';
+      bannerEl.innerHTML = `
+        <div class="archive-banner" id="archiveBannerInner">
+          <div class="archive-banner-text">
+            <strong>⏎ Party date has passed</strong>
+            This party was ${daysText}. Ready to move it to the Archive?
+          </div>
+          <div class="archive-banner-actions">
+            <button class="btn-archive-confirm" onclick="archiveFromPanel(${id})">Move to Archive</button>
+            <button class="btn-archive-dismiss" onclick="dismissBanner()">Not yet</button>
+          </div>
+        </div>`;
+    }
+  }
+
+  const commsHTML = inq.comms.length
+    ? inq.comms.map((c,i) => `<div class="comm-entry"><span class="comm-icon">${{emailed:'✉',followed_up:'✳',engagement:'♻',called:'☎',texted:'📱',mo:'Ⓜ'}[c]||'?'}</span><span class="comm-label">${commLabel(c)}</span></div>`).join('')
+    : '<div style="color:var(--text-muted);font-size:11px;font-style:italic">No communication logged yet</div>';
+
+  const flagsHTML = [
+    inq.flags.includes('swag') ? '<span class="flag flag-swag">🛍 Swag Bag Needed</span>' : '',
+    inq.flags.includes('offsite') ? '<span class="flag flag-offsite">🏠 Off-Site — Mo Approval Required</span>' : '',
+    inq.flags.includes('bigmoney') ? '<span class="flag flag-bigmoney">💰 Big Money Client ($600+)</span>' : '',
+    inq.flags.includes('mo') ? '<span class="flag flag-mo">Ⓜ Mo\'s Client</span>' : '',
+    inq.theme ? `<span class="flag flag-theme">${inq.theme} Theme</span>` : '',
+  ].filter(Boolean).join(' ');
+
+  const stageBtns = ['working','close','booked','lost'].map(s =>
+    `<button class="stage-btn${inq.stage===s?' current':''}" onclick="changeStage(${inq.id},'${s}')">${stageLabel(s)}</button>`
+  ).join('');
+
+  document.getElementById('panelBody').innerHTML = `
+    <div class="panel-section">
+      <div class="panel-section-label">Event</div>
+      <div class="detail-row"><span class="detail-key">Date</span><span class="detail-val gold">${formatDate(inq.date)}</span></div>
+      ${inq.time?`<div class="detail-row"><span class="detail-key">Time</span><span class="detail-val">${formatTime(inq.time)}</span></div>`:''}
+      <div class="detail-row"><span class="detail-key">Duration</span><span class="detail-val">${inq.duration||'—'}</span></div>
+      <div class="detail-row"><span class="detail-key">Guests</span><span class="detail-val">${inq.size}</span></div>
+      <div class="detail-row"><span class="detail-key">Type</span><span class="detail-val">${inq.type}</span></div>
+      ${inq.theme?`<div class="detail-row"><span class="detail-key">Theme</span><span class="detail-val">${inq.theme}</span></div>`:''}
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-label">Contact</div>
+      <div class="detail-row"><span class="detail-key">Phone</span><span class="detail-val">${inq.phone||'—'}</span></div>
+      <div class="detail-row"><span class="detail-key">Email</span><span class="detail-val">${inq.email||'—'}</span></div>
+      <div class="detail-row"><span class="detail-key">Inquiry Date</span><span class="detail-val">${formatDate(inq.inquiryDate)}</span></div>
+    </div>
+    ${flagsHTML?`<div class="panel-section"><div class="panel-section-label">Flags</div><div style="display:flex;flex-wrap:wrap;gap:6px">${flagsHTML}</div></div>`:''}
+    ${inq.notes?`<div class="panel-section"><div class="panel-section-label">Notes</div><div class="notes-box">${inq.notes}</div></div>`:''}
+    <div class="panel-section">
+      <div class="panel-section-label">Communication Log</div>
+      <div class="comms-log">${commsHTML}</div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-label">Move Stage</div>
+      <div class="stage-btns">${stageBtns}</div>
+    </div>
+  `;
+
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('sidePanel').classList.add('open');
+}
+
+function changeStage(id, newStage) {
+  const inq = inquiries.find(i=>i.id===id);
+  if (inq) { inq.stage = newStage; }
+  closePanel();
+  renderStats();
+  renderPipeline();
+}
+
+function closePanel() {
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('sidePanel').classList.remove('open');
+}
+
+// ── ENTRY FORM ──
+function toggleTag(el, group) {
+  if (group === 'stage') {
+    document.querySelectorAll('#stageGroup .tag-btn').forEach(b=>b.classList.remove('sel'));
+    el.classList.add('sel');
+    activeStage = el.dataset.stage;
+  } else if (group === 'theme') {
+    const wasSel = el.classList.contains('sel');
+    document.querySelectorAll('#themeGroup .tag-btn').forEach(b=>b.classList.remove('sel'));
+    if (!wasSel) { el.classList.add('sel'); selectedTheme = el.dataset.theme; }
+    else selectedTheme = '';
+  }
+}
+
+function toggleComm(el) {
+  el.classList.toggle('sel');
+  const c = el.dataset.comm;
+  if (el.classList.contains('sel')) selectedComms.push(c);
+  else selectedComms = selectedComms.filter(x=>x!==c);
+}
+
+function toggleFlag(el) {
+  el.classList.toggle('sel');
+  const f = el.dataset.flag;
+  if (el.classList.contains('sel')) selectedFlags.push(f);
+  else selectedFlags = selectedFlags.filter(x=>x!==f);
+}
+
+function buildEntryObj() {
+  const name = document.getElementById('f-name').value.trim();
+  const date = document.getElementById('f-date').value;
+  return {
+    id: nextId++,
+    name,
+    phone: document.getElementById('f-phone').value.trim(),
+    email: document.getElementById('f-email').value.trim(),
+    date: date || 'TBD',
+    time: document.getElementById('f-time').value,
+    size: parseInt(document.getElementById('f-size').value) || '?',
+    duration: document.getElementById('f-dur').value,
+    type: document.getElementById('f-type').value || 'Other',
+    theme: selectedTheme,
+    notes: document.getElementById('f-notes').value.trim(),
+    stage: activeStage,
+    comms: [...selectedComms],
+    flags: [...selectedFlags],
+    inquiryDate: new Date().toISOString().slice(0,10),
+    created: Date.now()
+  };
+}
+
+let pendingEntry = null;
+
+function saveEntry() {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) { document.getElementById('f-name').style.borderColor='var(--red)'; return; }
+
+  // Check for duplicates — match on name (fuzzy) or name+date
+  const nameLower = name.toLowerCase();
+  const date = document.getElementById('f-date').value;
+
+  const dupMatches = [
+    ...inquiries.filter(i => i.name.toLowerCase() === nameLower),
+    ...archivedParties.filter(p => p.name.toLowerCase() === nameLower),
+    // Also catch same date conflicts in booked/working
+    ...(date ? inquiries.filter(i => i.date === date && i.name.toLowerCase().includes(nameLower.split(' ')[0])) : []),
+  ];
+
+  // Deduplicate matches
+  const seen = new Set();
+  const uniqueMatches = dupMatches.filter(m => {
+    const key = m.name + (m.date||'') + (m.stage||'archive');
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  if (uniqueMatches.length > 0) {
+    // Show warning
+    document.getElementById('dupMatches').innerHTML = uniqueMatches.slice(0,3).map(m => {
+      const where = m.stage ? stageLabel(m.stage) : 'Archive';
+      const dateStr = m.date && m.date !== 'TBD' ? ' · ' + formatDate(m.date) : '';
+      return `<div class="dup-match"><strong>${m.name}</strong>${dateStr} · ${m.type||''}${dateStr} <span style="color:var(--gold);margin-left:8px;">${where}</span></div>`;
+    }).join('');
+    document.getElementById('dupWarning').style.display = 'block';
+    document.getElementById('dupWarning').scrollIntoView({behavior:'smooth', block:'nearest'});
+    pendingEntry = buildEntryObj();
+    return;
+  }
+
+  commitSave(buildEntryObj());
+}
+
+function forceSave() {
+  if (pendingEntry) {
+    commitSave(pendingEntry);
+    pendingEntry = null;
+  }
+}
+
+function dismissDup() {
+  document.getElementById('dupWarning').style.display = 'none';
+  pendingEntry = null;
+}
+
+function commitSave(entry) {
+  inquiries.unshift(entry);
+  document.getElementById('dupWarning').style.display = 'none';
+  const flash = document.getElementById('saveFlash');
+  flash.style.display = 'block';
+  setTimeout(()=>flash.style.display='none', 3000);
+  clearForm();
+  renderStats();
+  renderPipeline();
+}
+
+function clearForm() {
+  ['f-name','f-phone','f-email','f-date','f-time','f-size','f-notes'].forEach(id=>{
+    const el = document.getElementById(id);
+    if (el) { el.value=''; el.style.borderColor=''; }
+  });
+  document.getElementById('f-dur').value='';
+  document.getElementById('f-type').value='';
+  document.querySelectorAll('#themeGroup .tag-btn').forEach(b=>b.classList.remove('sel'));
+  document.querySelectorAll('#stageGroup .tag-btn').forEach(b=>b.classList.remove('sel'));
+  document.querySelector('#stageGroup .tag-btn[data-stage="working"]').classList.add('sel');
+  document.querySelectorAll('.comm-toggle, .flag-toggle').forEach(b=>b.classList.remove('sel'));
+  activeStage='working'; selectedTheme=''; selectedFlags=[]; selectedComms=[];
+}
+
+function applyFilter(el) {
+  document.querySelectorAll('.filt').forEach(f=>f.classList.remove('active'));
+  el.classList.add('active');
+  activeFilter = el.dataset.f;
+  renderPipeline();
+}
+
+function showView(name, tab) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.htab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  tab.classList.add('active');
+  if (name === 'archive') renderArchive();
+}
+
+
+// ── ARCHIVE FUNCTIONS ──
+function renderArchive() {
+  const search = (document.getElementById('archiveSearch')?.value||'').toLowerCase();
+  const filtered = search
+    ? archivedParties.filter(p => p.name.toLowerCase().includes(search) || p.type.toLowerCase().includes(search))
+    : archivedParties;
+
+  // Stats
+  const totalParties = archivedParties.length;
+  const totalGuests = archivedParties.reduce((s,p)=>s+(parseInt(p.size)||0),0);
+  const swagParties = archivedParties.filter(p=>p.flags.includes('swag')).length;
+  const batchParties = archivedParties.filter(p=>p.type==='Bachelorette').length;
+
+  document.getElementById('archiveStats').innerHTML = `
+    <div class="astat"><div class="astat-num">${totalParties}</div><div class="astat-label">Completed Parties</div></div>
+    <div class="astat"><div class="astat-num">${totalGuests.toLocaleString()}+</div><div class="astat-label">Guests Hosted</div></div>
+    <div class="astat"><div class="astat-num">${batchParties}</div><div class="astat-label">Bachelorettes</div></div>
+    <div class="astat"><div class="astat-num">${swagParties}</div><div class="astat-label">Swag Bag Parties</div></div>
+  `;
+
+  // Group by month
+  const groups = {};
+  filtered.forEach(p => {
+    if (!p.date) return;
+    try {
+      const d = new Date(p.date + 'T12:00:00');
+      const key = d.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(p);
+    } catch(e) {}
+  });
+
+  const monthOrder = Object.keys(groups).sort((a,b) => new Date(b) - new Date(a));
+
+  if (monthOrder.length === 0) {
+    document.getElementById('archiveBody').innerHTML = '<div style="text-align:center;padding:60px;color:var(--text-muted);font-style:italic;">No results found</div>';
+    return;
+  }
+
+  document.getElementById('archiveBody').innerHTML = monthOrder.map(month => {
+    const parties = groups[month];
+    const cardsHTML = parties.sort((a,b)=>new Date(b.date)-new Date(a.date)).map(p => {
+      const flagsHTML = [
+        p.flags.includes('swag') ? '<span class="flag flag-swag">🛍 Swag Bag</span>' : '',
+        p.flags.includes('offsite') ? '<span class="flag flag-offsite">🏠 Off-Site</span>' : '',
+        p.flags.includes('bigmoney') ? '<span class="flag flag-bigmoney">💰 $600+</span>' : '',
+        p.flags.includes('mo') ? '<span class="flag flag-mo">Ⓜ Mo</span>' : '',
+        p.theme ? '<span class="flag flag-theme">'+p.theme+'</span>' : '',
+      ].filter(Boolean).join('');
+
+      const d = new Date(p.date + 'T12:00:00');
+      const dateStr = d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+      const timeStr = p.time ? (() => { const [h,m]=p.time.split(':'); const hr=parseInt(h); return `${hr>12?hr-12:(hr===0?12:hr)}:${m} ${hr>=12?'PM':'AM'}`; })() : '';
+
+      return `<div class="archive-card">
+        <div class="archive-name">${p.name}</div>
+        <div class="archive-detail">
+          <div class="adate">${dateStr}${timeStr ? ' · ' + timeStr : ''}</div>
+          <div>${p.duration} · ${p.size} guests · ${p.type}</div>
+        </div>
+        ${flagsHTML ? '<div class="archive-flags">' + flagsHTML + '</div>' : ''}
+      </div>`;
+    }).join('');
+
+    return `<div class="month-group">
+      <div class="month-label">${month} <span class="month-count">${parties.length} parties</span></div>
+      <div class="archive-grid">${cardsHTML}</div>
+    </div>`;
+  }).join('');
+}
+
+
+function archiveFromPanel(id) {
+  const inq = inquiries.find(i=>i.id===id);
+  if (!inq) return;
+
+  // Build archive record from inquiry
+  const archiveRecord = {
+    name: inq.name,
+    date: inq.date,
+    time: inq.time,
+    size: inq.size,
+    duration: inq.duration,
+    type: inq.type,
+    theme: inq.theme,
+    notes: inq.notes,
+    flags: [...inq.flags],
+    comms: [...inq.comms],
+  };
+
+  archivedParties.unshift(archiveRecord);
+  inquiries = inquiries.filter(i=>i.id!==id);
+
+  // Show done flash, close panel after delay
+  const bannerEl = document.getElementById('panelBanner');
+  bannerEl.innerHTML = `<div class="archive-done-flash">✓ Moved to Archive — ${inq.name} is now in the record books</div>`;
+
+  setTimeout(() => {
+    closePanel();
+    renderStats();
+    renderPipeline();
+  }, 1800);
+}
+
+function dismissBanner() {
+  document.getElementById('archiveBannerInner').style.display = 'none';
+}
+
+
+// ── EXPORT FUNCTIONS ──
+function exportData() {
+  document.getElementById('exportOverlay').classList.add('open');
+}
+
+function closeExport(e) {
+  if (!e || e.target === document.getElementById('exportOverlay')) {
+    document.getElementById('exportOverlay').classList.remove('open');
+  }
+}
+
+function runExport(type) {
+  const now = new Date();
+  const dateStr = now.toISOString().slice(0,10);
+  const timeStr = now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}).replace(':','-').replace(' ','');
+
+  let rows = [];
+  let filename = '';
+
+  const pipelineHeaders = ['Name','Phone','Email','Event Date','Time','Duration','Party Size','Event Type','Theme',
+    'Stage','Flags','Communication Log','Notes','Inquiry Date'];
+
+  const archiveHeaders = ['Name','Event Date','Time','Duration','Party Size','Event Type','Theme',
+    'Flags','Communication Log','Notes'];
+
+  function pipelineRow(inq) {
+    return [
+      esc(inq.name),
+      esc(inq.phone || ''),
+      esc(inq.email || ''),
+      inq.date || '',
+      inq.time ? formatTime(inq.time) : '',
+      esc(inq.duration || ''),
+      inq.size || '',
+      esc(inq.type || ''),
+      esc(inq.theme || ''),
+      esc(stageLabel(inq.stage)),
+      esc(inq.flags.join(', ')),
+      esc(inq.comms.map(c => commLabel(c)).join(' | ')),
+      esc(inq.notes || ''),
+      inq.inquiryDate || '',
+    ].join(',');
+  }
+
+  function archiveRow(p) {
+    return [
+      esc(p.name),
+      p.date || '',
+      p.time ? formatTime(p.time) : '',
+      esc(p.duration || ''),
+      p.size || '',
+      esc(p.type || ''),
+      esc(p.theme || ''),
+      esc((p.flags||[]).join(', ')),
+      esc((p.comms||[]).map(c => commLabel(c)).join(' | ')),
+      esc(p.notes || ''),
+    ].join(',');
+  }
+
+  if (type === 'pipeline') {
+    filename = `flyclub-pipeline-${dateStr}.csv`;
+    rows = [pipelineHeaders.join(','), ...inquiries.map(pipelineRow)];
+  } else if (type === 'archive') {
+    filename = `flyclub-archive-${dateStr}.csv`;
+    rows = [archiveHeaders.join(','), ...archivedParties.map(archiveRow)];
+  } else if (type === 'booked') {
+    filename = `flyclub-confirmed-${dateStr}.csv`;
+    const booked = inquiries.filter(i => i.stage === 'booked');
+    rows = [pipelineHeaders.join(','), ...booked.map(pipelineRow)];
+  } else if (type === 'all') {
+    filename = `flyclub-full-export-${dateStr}.csv`;
+    rows = [
+      '=== PIPELINE ===',
+      pipelineHeaders.join(','),
+      ...inquiries.map(pipelineRow),
+      '',
+      '=== ARCHIVE ===',
+      archiveHeaders.join(','),
+      ...archivedParties.map(archiveRow),
+    ];
+  }
+
+  // Add export metadata header
+  const meta = [
+    `# Fly Club Bookings OS — Export`,
+    `# Generated: ${now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})} at ${now.toLocaleTimeString()}`,
+    `# Export type: ${type.toUpperCase()}`,
+    `# Pipeline records: ${inquiries.length} | Archive records: ${archivedParties.length}`,
+    '',
+  ];
+
+  const csvContent = [...meta, ...rows].join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+
+  // Close modal after brief delay
+  setTimeout(() => document.getElementById('exportOverlay').classList.remove('open'), 400);
+}
+
+function esc(val) {
+  if (!val) return '';
+  const str = String(val);
+  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+    return '"' + str.replace(/"/g, '""') + '"';
+  }
+  return str;
+}
+
+
+function toggleLegend() {
+  const body = document.getElementById('legendBody');
+  const chevron = document.getElementById('legendChevron');
+  body.classList.toggle('open');
+  chevron.classList.toggle('open');
+}
+
+// ── INIT ──
+function init() {
+  const now = new Date();
+  document.getElementById('hdate').textContent = now.toLocaleDateString('en-US',{weekday:'short',month:'long',day:'numeric'});
+  renderStats();
+  renderPipeline();
+}
+
+init();
+</script>
+</body>
+</html>
