@@ -1218,6 +1218,200 @@ select {
 
 .btn-dup-cancel:hover { color: var(--text); border-color: var(--text-dim); }
 
+
+/* ── EDIT PANEL ── */
+.panel-edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+
+.panel-edit-label {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.panel-input {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border-bright);
+  padding: 9px 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+  width: 100%;
+  border-radius: 0;
+  -webkit-appearance: none;
+}
+
+.panel-input:focus {
+  border-color: var(--gold);
+  background: rgba(200,39,138,0.05);
+}
+
+.panel-select {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border-bright);
+  padding: 9px 32px 9px 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--text);
+  outline: none;
+  width: 100%;
+  cursor: pointer;
+  border-radius: 0;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23c8278a' opacity='.7'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-color: rgba(255,255,255,0.04);
+  transition: border-color 0.2s;
+}
+
+.panel-select:focus { border-color: var(--gold); }
+
+.panel-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.panel-comm-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.panel-comm-btn {
+  padding: 5px 10px;
+  border: 1px solid var(--border-bright);
+  background: transparent;
+  color: var(--text-dim);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.panel-comm-btn.sel {
+  background: var(--gold-dim);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.panel-comm-btn:hover:not(.sel) {
+  background: rgba(200,39,138,0.06);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.panel-flag-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.panel-flag-btn {
+  padding: 5px 12px;
+  border: 1px solid var(--border-bright);
+  background: transparent;
+  color: var(--text-dim);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.panel-flag-btn.sel {
+  background: var(--gold-dim);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.panel-flag-btn:hover:not(.sel) {
+  background: rgba(200,39,138,0.06);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.panel-theme-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.panel-theme-btn {
+  padding: 5px 12px;
+  border: 1px solid var(--border-bright);
+  background: transparent;
+  color: var(--text-dim);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.panel-theme-btn.sel {
+  background: rgba(76,175,125,0.15);
+  border-color: rgba(76,175,125,0.4);
+  color: var(--green);
+}
+
+.panel-theme-btn:hover:not(.sel) {
+  background: rgba(76,175,125,0.06);
+  border-color: rgba(76,175,125,0.3);
+  color: var(--green);
+}
+
+.panel-save-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.btn-panel-save {
+  flex: 1;
+  padding: 11px 0;
+  background: var(--gold);
+  color: #000;
+  border: none;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.btn-panel-save:hover { background: #d94aaa; }
+
+.panel-saved-flash {
+  display: none;
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: rgba(76,175,125,0.1);
+  border: 1px solid rgba(76,175,125,0.3);
+  color: var(--green);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  animation: fadeUp 0.3s ease;
+}
+
 </style>
 </head>
 <body>
@@ -1955,32 +2149,107 @@ function openPanel(id) {
     `<button class="stage-btn${inq.stage===s?' current':''}" onclick="changeStage(${inq.id},'${s}')">${stageLabel(s)}</button>`
   ).join('');
 
+  
+  // Build comm toggle buttons for panel
+  const allComms = ['emailed','followed_up','engagement','called','texted'];
+  const commLabelsMap = {emailed:'✉ Emailed', followed_up:'✳ Followed Up', engagement:'♻ Engaged', called:'☎ Called', texted:'📱 Texted'};
+  const commBtnsHTML = allComms.map(c =>
+    `<button class="panel-comm-btn${inq.comms.includes(c)?' sel':''}" data-comm="${c}" onclick="togglePanelComm(this)">${commLabelsMap[c]}</button>`
+  ).join('');
+
+  // Flag toggle buttons for panel
+  const allFlags = ['swag','offsite','bigmoney','mo'];
+  const flagLabelsMap = {swag:'🛍 Swag Bag', offsite:'🏠 Off-Site', bigmoney:'💰 $600+', mo:'Ⓜ Mo's Client'};
+  const flagBtnsHTML = allFlags.map(f =>
+    `<button class="panel-flag-btn${inq.flags.includes(f)?' sel':''}" data-flag="${f}" onclick="togglePanelFlag(this)">${flagLabelsMap[f]}</button>`
+  ).join('');
+
+  // Theme toggle buttons for panel
+  const allThemes = ['Black Light','Western','Teachers Pet','PJ / Sleepover','Sensual'];
+  const themeBtnsHTML = allThemes.map(t =>
+    `<button class="panel-theme-btn${inq.theme===t?' sel':''}" data-theme="${t}" onclick="togglePanelTheme(this)">${t}</button>`
+  ).join('');
+
   document.getElementById('panelBody').innerHTML = `
     <div class="panel-section">
       <div class="panel-section-label">Event</div>
-      <div class="detail-row"><span class="detail-key">Date</span><span class="detail-val gold">${formatDate(inq.date)}</span></div>
-      ${inq.time?`<div class="detail-row"><span class="detail-key">Time</span><span class="detail-val">${formatTime(inq.time)}</span></div>`:''}
-      <div class="detail-row"><span class="detail-key">Duration</span><span class="detail-val">${inq.duration||'—'}</span></div>
-      <div class="detail-row"><span class="detail-key">Guests</span><span class="detail-val">${inq.size}</span></div>
-      <div class="detail-row"><span class="detail-key">Type</span><span class="detail-val">${inq.type}</span></div>
-      ${inq.theme?`<div class="detail-row"><span class="detail-key">Theme</span><span class="detail-val">${inq.theme}</span></div>`:''}
+      <div class="panel-field-row">
+        <div class="panel-edit-field">
+          <span class="panel-edit-label">Date</span>
+          <input class="panel-input" type="date" id="pe-date" value="${inq.date !== 'TBD' ? inq.date : ''}">
+        </div>
+        <div class="panel-edit-field">
+          <span class="panel-edit-label">Time</span>
+          <input class="panel-input" type="time" id="pe-time" value="${inq.time||''}">
+        </div>
+      </div>
+      <div class="panel-field-row">
+        <div class="panel-edit-field">
+          <span class="panel-edit-label">Duration</span>
+          <select class="panel-select" id="pe-dur">
+            <option value="">— Select —</option>
+            ${['60 min','90 min','120 min','Custom'].map(d=>`<option${inq.duration===d?' selected':''}>${d}</option>`).join('')}
+          </select>
+        </div>
+        <div class="panel-edit-field">
+          <span class="panel-edit-label">Party Size</span>
+          <input class="panel-input" type="number" id="pe-size" value="${inq.size||''}" min="1">
+        </div>
+      </div>
+      <div class="panel-edit-field">
+        <span class="panel-edit-label">Event Type</span>
+        <select class="panel-select" id="pe-type">
+          ${['Birthday','Bachelorette','Girls Night Out','Corporate / Brand','Anniversary','Other'].map(t=>`<option${inq.type===t?' selected':''}>${t}</option>`).join('')}
+        </select>
+      </div>
+      <div class="panel-edit-field" style="margin-top:4px;">
+        <span class="panel-edit-label">Theme</span>
+        <div class="panel-theme-btns">${themeBtnsHTML}</div>
+      </div>
     </div>
+
     <div class="panel-section">
       <div class="panel-section-label">Contact</div>
-      <div class="detail-row"><span class="detail-key">Phone</span><span class="detail-val">${inq.phone||'—'}</span></div>
-      <div class="detail-row"><span class="detail-key">Email</span><span class="detail-val">${inq.email||'—'}</span></div>
-      <div class="detail-row"><span class="detail-key">Inquiry Date</span><span class="detail-val">${formatDate(inq.inquiryDate)}</span></div>
+      <div class="panel-edit-field">
+        <span class="panel-edit-label">Name</span>
+        <input class="panel-input" type="text" id="pe-name" value="${inq.name||''}">
+      </div>
+      <div class="panel-field-row">
+        <div class="panel-edit-field">
+          <span class="panel-edit-label">Phone</span>
+          <input class="panel-input" type="text" id="pe-phone" value="${inq.phone||''}">
+        </div>
+        <div class="panel-edit-field">
+          <span class="panel-edit-label">Email</span>
+          <input class="panel-input" type="email" id="pe-email" value="${inq.email||''}">
+        </div>
+      </div>
+      <div class="panel-edit-field">
+        <span class="panel-edit-label">Notes</span>
+        <textarea class="panel-input" id="pe-notes" style="min-height:60px;resize:vertical;">${inq.notes||''}</textarea>
+      </div>
     </div>
-    ${flagsHTML?`<div class="panel-section"><div class="panel-section-label">Flags</div><div style="display:flex;flex-wrap:wrap;gap:6px">${flagsHTML}</div></div>`:''}
-    ${inq.notes?`<div class="panel-section"><div class="panel-section-label">Notes</div><div class="notes-box">${inq.notes}</div></div>`:''}
+
+    <div class="panel-section">
+      <div class="panel-section-label">Flags</div>
+      <div class="panel-flag-btns">${flagBtnsHTML}</div>
+    </div>
+
     <div class="panel-section">
       <div class="panel-section-label">Communication Log</div>
-      <div class="comms-log">${commsHTML}</div>
+      <div class="panel-comm-toggles">${commBtnsHTML}</div>
     </div>
+
     <div class="panel-section">
-      <div class="panel-section-label">Move Stage</div>
+      <div class="panel-section-label">Stage</div>
       <div class="stage-btns">${stageBtns}</div>
     </div>
+
+    <div class="panel-save-row">
+      <button class="btn-panel-save" onclick="savePanel(${inq.id})">Save Changes</button>
+      <button class="btn-clear" style="padding:11px 18px;font-size:10px;" onclick="closePanel()">Cancel</button>
+    </div>
+    <div class="panel-saved-flash" id="panelSavedFlash">✓ Changes saved</div>
   `;
 
   document.getElementById('overlay').classList.add('open');
@@ -2376,6 +2645,60 @@ function toggleLegend() {
   body.classList.toggle('open');
   chevron.classList.toggle('open');
   chevronText.textContent = body.classList.contains('open') ? 'Hide' : 'Show';
+}
+
+
+// ── PANEL EDIT FUNCTIONS ──
+function togglePanelComm(el) {
+  el.classList.toggle('sel');
+}
+
+function togglePanelFlag(el) {
+  el.classList.toggle('sel');
+}
+
+function togglePanelTheme(el) {
+  const btns = el.closest('.panel-theme-btns').querySelectorAll('.panel-theme-btn');
+  const wasSel = el.classList.contains('sel');
+  btns.forEach(b => b.classList.remove('sel'));
+  if (!wasSel) el.classList.add('sel');
+}
+
+function savePanel(id) {
+  const inq = inquiries.find(i => i.id === id);
+  if (!inq) return;
+
+  // Read all edited values
+  inq.name     = document.getElementById('pe-name')?.value.trim() || inq.name;
+  inq.phone    = document.getElementById('pe-phone')?.value.trim() || '';
+  inq.email    = document.getElementById('pe-email')?.value.trim() || '';
+  inq.date     = document.getElementById('pe-date')?.value || 'TBD';
+  inq.time     = document.getElementById('pe-time')?.value || '';
+  inq.duration = document.getElementById('pe-dur')?.value || '';
+  inq.size     = parseInt(document.getElementById('pe-size')?.value) || inq.size;
+  inq.type     = document.getElementById('pe-type')?.value || inq.type;
+  inq.notes    = document.getElementById('pe-notes')?.value.trim() || '';
+
+  // Theme — whichever panel-theme-btn is sel
+  const selTheme = document.querySelector('.panel-theme-btn.sel');
+  inq.theme = selTheme ? selTheme.dataset.theme : '';
+
+  // Comms — collect all sel panel-comm-btns
+  inq.comms = Array.from(document.querySelectorAll('.panel-comm-btn.sel')).map(b => b.dataset.comm);
+
+  // Flags — collect all sel panel-flag-btns
+  inq.flags = Array.from(document.querySelectorAll('.panel-flag-btn.sel')).map(b => b.dataset.flag);
+
+  // Update panel header with new name
+  document.getElementById('pName').textContent = inq.name;
+
+  // Flash confirmation
+  const flash = document.getElementById('panelSavedFlash');
+  if (flash) { flash.style.display = 'block'; setTimeout(() => flash.style.display = 'none', 2000); }
+
+  // Re-render pipeline so card updates and re-sorts
+  renderStats();
+  renderPipeline();
 }
 
 // ── INIT ──
