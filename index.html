@@ -1412,6 +1412,80 @@ select {
   animation: fadeUp 0.3s ease;
 }
 
+
+/* ── DELETE ── */
+.btn-panel-delete {
+  padding: 11px 16px;
+  background: transparent;
+  color: var(--red);
+  border: 1px solid rgba(224,82,82,0.35);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.btn-panel-delete:hover {
+  background: var(--red-dim);
+  border-color: var(--red);
+}
+
+.delete-confirm {
+  display: none;
+  margin-top: 10px;
+  padding: 14px 16px;
+  background: var(--red-dim);
+  border: 1px solid rgba(224,82,82,0.35);
+  animation: fadeUp 0.2s ease;
+}
+
+.delete-confirm-text {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.delete-confirm-text strong { color: var(--red); }
+
+.delete-confirm-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-delete-yes {
+  padding: 8px 18px;
+  background: var(--red);
+  color: #fff;
+  border: none;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-delete-yes:hover { background: #c0392b; }
+
+.btn-delete-no {
+  padding: 8px 14px;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border-bright);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-delete-no:hover { color: var(--text); border-color: var(--text-dim); }
+
 </style>
 </head>
 <body>
@@ -1424,6 +1498,9 @@ select {
     <button class="htab" onclick="showView('archive',this)">Archive</button>
   </div>
   <div class="header-meta" style="display:flex;align-items:center;gap:16px;">
+    <a href="flyclub-guide.html" target="_blank" class="btn-export" style="text-decoration:none;">
+      📖 Guide
+    </a>
     <button class="btn-export" onclick="exportData()" title="Export all data as CSV">
       ↓ Export
     </button>
@@ -2248,6 +2325,14 @@ function openPanel(id) {
     <div class="panel-save-row">
       <button class="btn-panel-save" onclick="savePanel(${inq.id})">Save Changes</button>
       <button class="btn-clear" style="padding:11px 18px;font-size:10px;" onclick="closePanel()">Cancel</button>
+      <button class="btn-panel-delete" onclick="showDeleteConfirm(${inq.id}, '${inq.name.replace(/'/g, "\\'")}')">✕ Delete</button>
+    </div>
+    <div class="delete-confirm" id="deleteConfirm">
+      <div class="delete-confirm-text">Are you sure you want to delete <strong id="deleteConfirmName"></strong>? This cannot be undone.</div>
+      <div class="delete-confirm-actions">
+        <button class="btn-delete-yes" id="deleteConfirmBtn">Delete permanently</button>
+        <button class="btn-delete-no" onclick="hideDeleteConfirm()">Keep it</button>
+      </div>
     </div>
     <div class="panel-saved-flash" id="panelSavedFlash">✓ Changes saved</div>
   `;
@@ -2697,6 +2782,29 @@ function savePanel(id) {
   if (flash) { flash.style.display = 'block'; setTimeout(() => flash.style.display = 'none', 2000); }
 
   // Re-render pipeline so card updates and re-sorts
+  renderStats();
+  renderPipeline();
+}
+
+
+// ── DELETE FUNCTIONS ──
+function showDeleteConfirm(id, name) {
+  const confirm = document.getElementById('deleteConfirm');
+  const nameEl = document.getElementById('deleteConfirmName');
+  const btn = document.getElementById('deleteConfirmBtn');
+  if (nameEl) nameEl.textContent = name;
+  if (btn) btn.onclick = () => deleteInquiry(id);
+  if (confirm) confirm.style.display = 'block';
+}
+
+function hideDeleteConfirm() {
+  const confirm = document.getElementById('deleteConfirm');
+  if (confirm) confirm.style.display = 'none';
+}
+
+function deleteInquiry(id) {
+  inquiries = inquiries.filter(i => i.id !== id);
+  closePanel();
   renderStats();
   renderPipeline();
 }
