@@ -1027,6 +1027,7 @@ select {
 }
 
 .legend-toggle:hover { background: rgba(255,255,255,0.03); }
+.legend-toggle:hover .legend-chevron-wrap { background: rgba(200,39,138,0.25); border-color: var(--gold); }
 
 .legend-toggle-label {
   display: flex;
@@ -1040,10 +1041,28 @@ select {
   font-size: 11px;
 }
 
+.legend-chevron-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 4px 10px;
+  border: 1px solid rgba(200,39,138,0.35);
+  background: rgba(200,39,138,0.08);
+  transition: all 0.2s;
+}
+
+.legend-chevron-text {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--gold);
+  text-transform: uppercase;
+}
+
 .legend-chevron {
-  font-size: 10px;
+  font-size: 11px;
   transition: transform 0.2s;
-  color: var(--text-muted);
+  color: var(--gold);
+  line-height: 1;
 }
 
 .legend-chevron.open { transform: rotate(180deg); }
@@ -1253,7 +1272,10 @@ select {
   <div class="legend-bar" id="legendBar">
     <button class="legend-toggle" onclick="toggleLegend()">
       <span class="legend-toggle-label">Pipeline key — stages, flags & comms</span>
-      <span class="legend-chevron" id="legendChevron">▾</span>
+      <span class="legend-chevron-wrap">
+        <span class="legend-chevron-text" id="legendChevronText">Show</span>
+        <span class="legend-chevron" id="legendChevron">▾</span>
+      </span>
     </button>
     <div class="legend-body" id="legendBody">
       <div class="legend-sections">
@@ -2350,8 +2372,10 @@ function esc(val) {
 function toggleLegend() {
   const body = document.getElementById('legendBody');
   const chevron = document.getElementById('legendChevron');
+  const chevronText = document.getElementById('legendChevronText');
   body.classList.toggle('open');
   chevron.classList.toggle('open');
+  chevronText.textContent = body.classList.contains('open') ? 'Hide' : 'Show';
 }
 
 // ── INIT ──
