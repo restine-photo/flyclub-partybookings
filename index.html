@@ -2159,7 +2159,7 @@ function openPanel(id) {
 
   // Flag toggle buttons for panel
   const allFlags = ['swag','offsite','bigmoney','mo'];
-  const flagLabelsMap = {swag:'🛍 Swag Bag', offsite:'🏠 Off-Site', bigmoney:'💰 $600+', mo:'Ⓜ Mo's Client'};
+  const flagLabelsMap = {swag:'🛍 Swag Bag', offsite:'🏠 Off-Site', bigmoney:'💰 $600+', mo:'Ⓜ Mo\u2019s Client'};
   const flagBtnsHTML = allFlags.map(f =>
     `<button class="panel-flag-btn${inq.flags.includes(f)?' sel':''}" data-flag="${f}" onclick="togglePanelFlag(this)">${flagLabelsMap[f]}</button>`
   ).join('');
