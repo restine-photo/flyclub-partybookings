@@ -2932,7 +2932,6 @@ async function sheetsGet(params) {
 async function loadFromSheets() {
   try {
     setLoadingProgress(30, 'Connecting to database…');
-    // Init sheets if first time
     await sheetsPost({ action: 'init' });
     setLoadingProgress(60, 'Loading inquiries…');
     const data = await sheetsGet({ action: 'load' });
@@ -2947,26 +2946,22 @@ async function loadFromSheets() {
           flags: Array.isArray(r.flags) ? r.flags : [],
         }));
         nextId = Math.max(...inquiries.map(i => parseInt(i.id) || 0)) + 1;
+      } else {
+        await sheetsPost({ action: 'clearAndRebuild', inquiries, archive: archivedParties });
       }
       if (data.archive && data.archive.length > 0) {
-        const freshArchive = data.archive.map(r => ({
+        archivedParties.splice(0, archivedParties.length, ...data.archive.map(r => ({
           ...r,
           size: parseInt(r.size) || '?',
           comms: Array.isArray(r.comms) ? r.comms : [],
           flags: Array.isArray(r.flags) ? r.flags : [],
-        }));
-        // Merge with seed archive — remove duplicates by name+date
-        const existingKeys = new Set(freshArchive.map(p => p.name + p.date));
-        const seedFiltered = archivedParties.filter(p => !existingKeys.has(p.name + p.date));
-        // Write seed data to sheets if first load
-        if (freshArchive.length === 0 && archivedParties.length > 0) {
-          // skip for now — archive is read-only from seed
-        }
-        archivedParties.splice(0, archivedParties.length, ...freshArchive, ...seedFiltered);
+        })));
       }
     }
     setLoadingProgress(100, 'Ready');
     setTimeout(hideLoading, 400);
+    renderStats();
+    renderPipeline();
   } catch(err) {
     console.error('Load error:', err);
     setLoadingProgress(100, 'Loaded from cache');
